@@ -1,0 +1,330 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Primary color scheme - Lynara AI */
+  --background: #0b132b;
+  --foreground: #f6f7fb;
+  --card: #1a2847;
+  --card-foreground: #f6f7fb;
+  --popover: #1a2847;
+  --popover-foreground: #f6f7fb;
+  --primary: #00e1b4;
+  --primary-foreground: #0b132b;
+  --secondary: #006184;
+  --secondary-foreground: #f6f7fb;
+  --muted: #2a3f5f;
+  --muted-foreground: #9ca3b0;
+  --accent: #00e1b4;
+  --accent-foreground: #0b132b;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #2a3f5f;
+  --input: #1a2847;
+  --ring: #00e1b4;
+  --chart-1: #00e1b4;
+  --chart-2: #006184;
+  --chart-3: #012b36;
+  --chart-4: #00a88e;
+  --chart-5: #00c9a0;
+  --radius: 0.625rem;
+
+  /* Sidebar colors */
+  --sidebar: #0a1f35;
+  --sidebar-foreground: #eaf6ff;
+  --sidebar-primary: #00e1b4;
+  --sidebar-primary-foreground: #001328;
+  --sidebar-accent: #00e1b4;
+  --sidebar-accent-foreground: #001328;
+  --sidebar-border: #1a3a52;
+  --sidebar-ring: #00e1b4;
+
+  /* Light mode overrides (for light theme) */
+  --light-background: #f6f7fb;
+  --light-foreground: #0b132b;
+  --light-card: #ffffff;
+  --light-card-foreground: #0b132b;
+  --light-muted: #e5e7eb;
+  --light-muted-foreground: #4b5563;
+  --light-border: #e5e7eb;
+  --light-input: #ffffff;
+}
+
+.dark {
+  --background: #0b132b;
+  --foreground: #f6f7fb;
+  --card: #1a2847;
+  --card-foreground: #f6f7fb;
+  --popover: #1a2847;
+  --popover-foreground: #f6f7fb;
+  --primary: #00e1b4;
+  --primary-foreground: #0b132b;
+  --secondary: #006184;
+  --secondary-foreground: #f6f7fb;
+  --muted: #2a3f5f;
+  --muted-foreground: #9ca3b0;
+  --accent: #00e1b4;
+  --accent-foreground: #0b132b;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #2a3f5f;
+  --input: #1a2847;
+  --ring: #00e1b4;
+}
+
+.light {
+  --background: #f6f7fb;
+  --foreground: #0b132b;
+  --card: #ffffff;
+  --card-foreground: #0b132b;
+  --popover: #ffffff;
+  --popover-foreground: #0b132b;
+  --primary: #00e1b4;
+  --primary-foreground: #0b132b;
+  --secondary: #006184;
+  --secondary-foreground: #ffffff;
+  --muted: #e5e7eb;
+  --muted-foreground: #4b5563;
+  --accent: #00e1b4;
+  --accent-foreground: #0b132b;
+  --border: #e5e7eb;
+  --input: #ffffff;
+}
+
+@theme inline {
+  --font-sans: "Inter", "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+  }
+
+  /* Improved input and form styling with better focus states */
+  input,
+  textarea,
+  select {
+    @apply transition-all duration-200;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+
+  .light input:focus,
+  .light textarea:focus,
+  .light select:focus {
+    @apply ring-offset-background;
+  }
+
+  /* Button base styles for consistency */
+  button {
+    @apply transition-all duration-200;
+  }
+
+  button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+/* Enhanced animations with better performance */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(0, 225, 180, 0.3), 0 0 30px rgba(0, 225, 180, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 225, 180, 0.5), 0 0 50px rgba(0, 225, 180, 0.2);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.6s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* Skeleton loading animation */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Utility classes for responsive typography and spacing */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Better scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full transition-colors duration-200;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground;
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2;
+}
+
+.light :focus-visible {
+  @apply ring-offset-background;
+}
