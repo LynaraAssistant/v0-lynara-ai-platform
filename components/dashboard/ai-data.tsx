@@ -27,6 +27,9 @@ export default function AIData() {
     country: "Colombia",
     city: "Bogotá",
     websiteUrl: "https://example.com",
+    customerTypes: "Empresas medianas, startups, agencias de marketing",
+    additionalContext:
+      "Tengo 45 mesas en el restaurante, 2 turnos de atención (13:00-14:45 y 15:00-17:00), capacidad para 200 personas por turno y 3 empleados en sala. Adaptar respuestas según esto.",
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -188,6 +191,39 @@ export default function AIData() {
                 value={formData.websiteUrl}
                 onChange={handleChange}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-bold text-[#eaf6ff] mb-4 pb-2 border-b border-[#1a3a52]">
+            Datos avanzados para automatización
+          </h3>
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <Label className="text-[#eaf6ff] mb-2 block">Tipos de clientes con los que trabaja habitualmente</Label>
+              <Textarea
+                name="customerTypes"
+                value={formData.customerTypes}
+                onChange={handleChange}
+                placeholder="Ejemplo: Empresas medianas, startups, agencias de marketing, autónomos..."
+                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label className="text-[#eaf6ff] mb-2 block">
+                Información adicional o contexto específico del negocio (Añade todos los datos del desarrollo del
+                negocio que creas relevantes y no los hayas puesto antes)
+              </Label>
+              <Textarea
+                name="additionalContext"
+                value={formData.additionalContext}
+                onChange={handleChange}
+                placeholder="Ejemplo: Tengo 45 mesas en el restaurante, 2 turnos de atención (13:00-14:45 y 15:00-17:00), capacidad para 200 personas por turno y 3 empleados en sala. Adaptar respuestas según esto."
+                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
+                rows={5}
               />
             </div>
           </div>
