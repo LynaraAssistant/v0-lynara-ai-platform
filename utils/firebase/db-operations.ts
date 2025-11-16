@@ -196,11 +196,8 @@ export function listenToQuery(
   return unsubscribe
 }
 
-/**
- * Legacy API compatibility - Maps old function names to new implementations
- * These are kept for backward compatibility with existing code
- */
-
+// Legacy API: Set a document at a given path
+// Uses path format: "collection/docId" or "collection/docId/subcollection/subDocId"
 export async function setDocument(
   path: string,
   data: DocumentData
@@ -217,6 +214,8 @@ export async function setDocument(
   }
 }
 
+// Legacy API: Get a document from a given path
+// Uses path format: "collection/docId" or "collection/docId/subcollection/subDocId"
 export async function getDocument(path: string): Promise<DocumentData | null> {
   try {
     const docRef = doc(dbClient, path)
@@ -224,53 +223,6 @@ export async function getDocument(path: string): Promise<DocumentData | null> {
     return docSnap.exists() ? docSnap.data() : null
   } catch (error) {
     console.error("[Firestore] Error in getDocument:", error)
-    throw error
-  }
-}
-
-export async function updateDocument(
-  path: string,
-  data: Partial<DocumentData>
-): Promise<void> {
-  try {
-    const docRef = doc(dbClient, path)
-    await updateDoc(docRef, {
-      ...data,
-      updatedAt: serverTimestamp(),
-    })
-  } catch (error) {
-    console.error("[Firestore] Error in updateDocument:", error)
-    throw error
-  }
-}
-
-export async function deleteDocument(path: string): Promise<void> {
-  try {
-    const docRef = doc(dbClient, path)
-    await deleteDoc(docRef)
-  } catch (error) {
-    console.error("[Firestore] Error in deleteDocument:", error)
-    throw error
-  }
-}
-
-export async function queryDocuments(
-  collectionPath: string,
-  ...constraints: QueryConstraint[]
-): Promise<DocumentData[]> {
-  try {
-    const collectionRef = collection(dbClient, collectionPath)
-    const q = constraints.length > 0 
-      ? query(collectionRef, ...constraints)
-      : query(collectionRef)
-    const querySnapshot = await getDocs(q)
-    
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }))
-  } catch (error) {
-    console.error("[Firestore] Error in queryDocuments:", error)
     throw error
   }
 }

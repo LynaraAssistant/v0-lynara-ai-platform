@@ -13,6 +13,8 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   type User,
+  getAuth,
+  onAuthStateChanged,
 } from "firebase/auth"
 import { authClient } from "@/lib/firebase"
 import { writeLog } from "./logging"
@@ -69,7 +71,7 @@ export async function registerUser(
 /**
  * Sign in existing user
  */
-export async function loginUser(email: string, password: string): Promise<User> {
+export async function loginWithEmailPassword(email: string, password: string): Promise<User> {
   try {
     const cleanEmail = sanitizeInput(email).toLowerCase().trim()
 
@@ -116,6 +118,24 @@ export async function logoutUser(userId?: string): Promise<void> {
     console.error("[v0] Error logging out:", error)
     throw new Error("Error al cerrar sesión. Por favor, intenta de nuevo.")
   }
+}
+
+/**
+ * Get the current authenticated user
+ */
+export function getCurrentUser(): User | null {
+  const auth = getAuth(authClient)
+  let currentUser = null
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user
+    } else {
+      currentUser = null
+    }
+  })
+
+  return currentUser
 }
 
 /**
