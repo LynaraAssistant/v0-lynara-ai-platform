@@ -2,11 +2,16 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-let app;
+// Firebase solo debe iniciarse en cliente
+const isClient = typeof window !== "undefined";
 
-// Evita inicializar Firebase más de una vez y solo del lado del cliente
-if (typeof window !== "undefined") {
+let app: any = null;
+let auth: any = null;
+let db: any = null;
+
+if (isClient) {
   const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -17,8 +22,10 @@ if (typeof window !== "undefined") {
   };
 
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  auth = getAuth(app);
+  db = getFirestore(app);
 }
 
-export const auth = app ? getAuth(app) : null;
-
-export default app;
+export const firebaseApp = app;
+export const authClient = auth;
+export const dbClient = db;
