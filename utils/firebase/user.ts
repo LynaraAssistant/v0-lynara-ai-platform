@@ -4,8 +4,7 @@
  * Handles all user-related operations with proper tenant isolation
  */
 
-import { setDocument, updateDocument, getDocument, queryDocuments } from "./firestore"
-import { where } from "firebase/firestore"
+import { setDocument, updateDocument, getDocument, queryDocuments, where } from "./db-operations"
 import { writeLog } from "./logging"
 import type { UserData } from "@/lib/schemas/user.schema"
 

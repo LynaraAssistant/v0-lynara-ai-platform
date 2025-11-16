@@ -4,7 +4,7 @@
  * Handles all company-related operations with multi-tenant isolation
  */
 
-import { setDocument, updateDocument, getDocument } from "./firestore"
+import { setDocument, updateDocument, getDocument } from "./db-operations"
 import { writeLog } from "./logging"
 import type { CompanyData } from "@/lib/schemas/company.schema"
 

@@ -5,7 +5,7 @@
  * Now tracks before/after values for audit trails
  */
 
-import { setDocument } from "./firestore"
+import { setDocument } from "./db-operations"
 import { sanitizeInput } from "../security/sanitize"
 
 interface LogEntry {
