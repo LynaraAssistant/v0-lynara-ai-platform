@@ -3,7 +3,7 @@
 import type React from 'react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth'
 import { authClient } from '@/lib/firebase'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { dbClient } from '@/lib/firebase'
-import { setDoc, doc } from 'firebase/firestore'
+import { setDoc, doc, deleteDoc } from 'firebase/firestore'
+import { errorMonitor } from '@/lib/monitoring'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -35,12 +36,16 @@ export default function RegisterPage() {
       setError('El nombre es requerido')
       return false
     }
-    if (!email.trim()) {
-      setError('El correo es requerido')
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres')
       return false
     }
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+    if (!/[A-Z]/.test(password)) {
+      setError('La contraseña debe contener al menos una mayúscula')
+      return false
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('La contraseña debe contener al menos un número')
       return false
     }
     if (password !== confirmPassword) {
@@ -60,17 +65,24 @@ export default function RegisterPage() {
 
     setIsLoading(true)
 
+    let userCredential: any = null
+    let companyId: string | null = null
+
     try {
-      const userCredential = await createUserWithEmailAndPassword(authClient, email, password)
+      userCredential = await createUserWithEmailAndPassword(authClient, email, password)
 
       await updateProfile(userCredential.user, {
         displayName: name,
       })
 
-      const companyId = `company_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`
-      localStorage.setItem('companyId', companyId)
+      await sendEmailVerification(userCredential.user)
+
+      companyId = `company_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`
       
-      localStorage.setItem(`user_role_${userCredential.user.uid}`, 'user')
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('companyId', companyId)
+        localStorage.setItem(`user_role_${userCredential.user.uid}`, 'user')
+      }
 
       if (dbClient) {
         try {
@@ -97,13 +109,28 @@ export default function RegisterPage() {
           console.log('[v0] Firestore structure created successfully for company:', companyId)
         } catch (firestoreError) {
           console.error('[v0] Error creating Firestore structure:', firestoreError)
+          
+          if (userCredential && userCredential.user) {
+            try {
+              await userCredential.user.delete()
+              console.log('[v0] Rolled back user creation due to Firestore error')
+            } catch (deleteErr) {
+              console.error('[v0] Error rolling back user:', deleteErr)
+            }
+          }
+          
           throw new Error('Error al crear la estructura de datos. Intenta nuevamente.')
         }
       }
 
-      router.push('/dashboard')
+      router.push('/verify-email')
     } catch (err: any) {
       console.error('[v0] Registration error:', err)
+      errorMonitor.captureException(err, {
+        tags: { flow: 'registration' },
+        extra: { email, companyId },
+      })
+      
       let errorMessage = 'Error al registrarse'
       if (err.code === 'auth/email-already-in-use') {
         errorMessage = 'Este correo ya está registrado'
@@ -159,6 +186,7 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 required
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff] placeholder-[#96b5c7]"
+                aria-label="Nombre completo"
               />
             </div>
 
@@ -175,6 +203,7 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 required
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff] placeholder-[#96b5c7]"
+                aria-label="Correo electrónico"
               />
             </div>
 
@@ -192,15 +221,20 @@ export default function RegisterPage() {
                   disabled={isLoading}
                   required
                   className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff] placeholder-[#96b5c7]"
+                  aria-label="Contraseña"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#96b5c7] hover:text-[#00e1b4]"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
+              <p className="text-xs text-[#96b5c7] mt-1">
+                Mínimo 8 caracteres, incluye mayúscula y número
+              </p>
             </div>
 
             <div>
@@ -216,11 +250,12 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 required
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff] placeholder-[#96b5c7]"
+                aria-label="Confirmar contraseña"
               />
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3">
+              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3" role="alert">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
@@ -229,6 +264,7 @@ export default function RegisterPage() {
               type="submit"
               disabled={isLoading}
               className="w-full bg-[#00e1b4] hover:bg-[#00c9a0] text-[#001328] font-semibold py-2 rounded-lg shadow-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,225,180,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Registrarse"
             >
               {isLoading ? 'Registrando...' : 'Registrarse'}
             </Button>

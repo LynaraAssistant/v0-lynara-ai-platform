@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { dbClient } from '@/lib/firebase'
+import { withRetry } from '@/lib/monitoring'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -24,7 +25,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard')
+      if (!user.emailVerified) {
+        router.push('/verify-email')
+      } else {
+        router.push('/dashboard')
+      }
     }
   }, [user, loading, router])
 
@@ -36,23 +41,32 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(authClient, email, password)
       
-      const storedCompanyId = localStorage.getItem('companyId')
+      if (!userCredential.user.emailVerified) {
+        setError('Por favor verifica tu correo electrónico antes de continuar.')
+        setIsLoading(false)
+        router.push('/verify-email')
+        return
+      }
+      
+      const storedCompanyId = typeof window !== 'undefined' ? localStorage.getItem('companyId') : null
       
       if (!storedCompanyId && dbClient) {
-        const companiesRef = collection(dbClient, 'EMPRESAS')
-        const snapshot = await getDocs(companiesRef)
-        
-        for (const companyDoc of snapshot.docs) {
-          const usersRef = collection(dbClient, 'EMPRESAS', companyDoc.id, 'usuarios')
-          const userQuery = query(usersRef, where('email', '==', email))
-          const userSnapshot = await getDocs(userQuery)
+        await withRetry(async () => {
+          const companiesRef = collection(dbClient, 'EMPRESAS')
+          const snapshot = await getDocs(companiesRef)
           
-          if (!userSnapshot.empty) {
-            localStorage.setItem('companyId', companyDoc.id)
-            console.log('[v0] CompanyId recovered from Firestore:', companyDoc.id)
-            break
+          for (const companyDoc of snapshot.docs) {
+            const usersRef = collection(dbClient, 'EMPRESAS', companyDoc.id, 'usuarios')
+            const userQuery = query(usersRef, where('email', '==', email))
+            const userSnapshot = await getDocs(userQuery)
+            
+            if (!userSnapshot.empty) {
+              localStorage.setItem('companyId', companyDoc.id)
+              console.log('[v0] CompanyId recovered from Firestore:', companyDoc.id)
+              return
+            }
           }
-        }
+        }, 2, 1000)
       }
       
       router.push('/dashboard')
@@ -111,6 +125,7 @@ export default function LoginPage() {
                 disabled={isLoading}
                 required
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff] placeholder-[#96b5c7]"
+                aria-label="Correo electrónico"
               />
             </div>
 
@@ -128,19 +143,30 @@ export default function LoginPage() {
                   disabled={isLoading}
                   required
                   className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff] placeholder-[#96b5c7]"
+                  aria-label="Contraseña"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#96b5c7] hover:text-[#00e1b4]"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
             </div>
 
+            <div className="text-right">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-[#00e1b4] hover:text-[#00a2ff] hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3">
+              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3" role="alert">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
@@ -149,6 +175,7 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               className="w-full bg-[#00e1b4] hover:bg-[#00c9a0] text-[#001328] font-semibold py-2 rounded-lg shadow-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,225,180,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Iniciar sesión"
             >
               {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>

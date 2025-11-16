@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions para validación
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    function belongsToCompany(companyId) {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/EMPRESAS/$(companyId)/usuarios/$(request.auth.uid));
+    }
+    
+    function isAdmin(companyId) {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/EMPRESAS/$(companyId)/usuarios/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isOwner(companyId) {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/EMPRESAS/$(companyId)).data.ownerId == request.auth.uid;
+    }
+    
+    // Reglas para colección EMPRESAS
+    match /EMPRESAS/{companyId} {
+      // Solo usuarios autenticados y verificados pueden leer
+      allow read: if isSignedIn() && isEmailVerified() && belongsToCompany(companyId);
+      
+      // Solo el owner puede actualizar la empresa
+      allow update: if isSignedIn() && isEmailVerified() && isOwner(companyId);
+      
+      // Solo usuarios autenticados pueden crear (durante registro)
+      allow create: if isSignedIn();
+      
+      // Solo el owner puede eliminar
+      allow delete: if isSignedIn() && isOwner(companyId);
+      
+      // Subcollección usuarios
+      match /usuarios/{userId} {
+        // Usuarios del tenant pueden leer todos los usuarios de su empresa
+        allow read: if isSignedIn() && isEmailVerified() && belongsToCompany(companyId);
+        
+        // Solo el propio usuario o admin pueden actualizar
+        allow update: if isSignedIn() && isEmailVerified() && 
+                      (request.auth.uid == userId || isAdmin(companyId));
+        
+        // Solo durante registro o admin
+        allow create: if isSignedIn() && (request.auth.uid == userId || isAdmin(companyId));
+        
+        // Solo admin o owner pueden eliminar usuarios
+        allow delete: if isSignedIn() && (isAdmin(companyId) || isOwner(companyId));
+      }
+      
+      // Subcollección datos_operativos
+      match /datos_operativos/{docId} {
+        // Usuarios del tenant pueden leer
+        allow read: if isSignedIn() && isEmailVerified() && belongsToCompany(companyId);
+        
+        // Usuarios del tenant pueden escribir
+        allow write: if isSignedIn() && isEmailVerified() && belongsToCompany(companyId);
+      }
+      
+      // Logs - solo lectura, escritura desde server-side
+      match /logs_empresa/{logId} {
+        allow read: if isSignedIn() && isEmailVerified() && 
+                    (belongsToCompany(companyId) || isAdmin(companyId));
+        allow write: if false; // Solo server-side functions
+      }
+      
+      match /logs_usuario/{logId} {
+        allow read: if isSignedIn() && isEmailVerified() && belongsToCompany(companyId);
+        allow write: if false; // Solo server-side functions
+      }
+      
+      match /logs_operativos/{logId} {
+        allow read: if isSignedIn() && isEmailVerified() && 
+                    (belongsToCompany(companyId) || isAdmin(companyId));
+        allow write: if false; // Solo server-side functions
+      }
+    }
+  }
+}

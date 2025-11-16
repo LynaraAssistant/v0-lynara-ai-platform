@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import { dbClient } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { logCompanyAction, logUserAction } from "@/utils/firebase/logging";
 import { sanitizeInput } from "@/utils/security/sanitize";
+import { errorMonitor } from "@/lib/monitoring";
 
 interface CompanyData {
   // Identity
@@ -173,75 +174,93 @@ export function useFirestoreSync(): FirestoreSyncReturn {
     }
   }, [companyId, userId]);
 
-  const updateUserField = async (field: string, value: any): Promise<void> => {
-    if (!dbClient || !companyId || !userId) {
-      console.warn("[v0] Cannot update: missing dbClient, companyId, or userId");
-      return;
-    }
-
-    const sanitizedValue = typeof value === "string" ? sanitizeInput(value) : value;
-    const oldValue = userData[field];
-
-    setSaveStatus("saving");
-
-    try {
-      const userRef = doc(dbClient, "EMPRESAS", companyId, "usuarios", userId);
-      await updateDoc(userRef, {
-        [field]: sanitizedValue,
-        updatedAt: new Date().toISOString(),
-      });
-
-      await logUserAction(companyId, userId, `update_${field}`, {
-        field,
-        oldValue,
-        newValue: sanitizedValue,
-      });
-
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch (err: any) {
-      console.error(`[v0] Error updating user field ${field}:`, err);
-      setError(err.message);
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
-      throw err;
-    }
-  };
-
-  const updateCompanyField = async (field: string, value: any): Promise<void> => {
-    if (!dbClient || !companyId) {
-      console.warn("[v0] Cannot update: missing dbClient or companyId");
-      return;
-    }
-
-    const sanitizedValue = typeof value === "string" ? sanitizeInput(value) : value;
-    const oldValue = companyData[field];
-
-    setSaveStatus("saving");
-
-    try {
-      const companyRef = doc(dbClient, "EMPRESAS", companyId);
-      await updateDoc(companyRef, {
-        [field]: sanitizedValue,
-        updatedAt: new Date().toISOString(),
-      });
-
-      if (userId) {
-        await logCompanyAction(companyId, userId, `update_${field}`, oldValue, sanitizedValue, {
-          field,
-        });
+  const updateUserField = useCallback(
+    async (field: string, value: any): Promise<void> => {
+      if (!dbClient || !companyId || !userId) {
+        console.warn("[v0] Cannot update: missing dbClient, companyId, or userId");
+        return;
       }
 
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch (err: any) {
-      console.error(`[v0] Error updating company field ${field}:`, err);
-      setError(err.message);
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
-      throw err;
-    }
-  };
+      const sanitizedValue = typeof value === "string" ? sanitizeInput(value) : value;
+      const oldValue = userData[field];
+
+      setSaveStatus("saving");
+
+      try {
+        const userRef = doc(dbClient, "EMPRESAS", companyId, "usuarios", userId);
+        await updateDoc(userRef, {
+          [field]: sanitizedValue,
+          updatedAt: new Date().toISOString(),
+        });
+
+        await logUserAction(companyId, userId, `update_${field}`, {
+          field,
+          oldValue,
+          newValue: sanitizedValue,
+        });
+
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (err: any) {
+        console.error(`[v0] Error updating user field ${field}:`, err);
+        setError(err.message);
+        setSaveStatus("error");
+        
+        errorMonitor.captureException(err, {
+          tags: { operation: 'updateUserField', field },
+          extra: { companyId, userId, value: sanitizedValue },
+        });
+        
+        setTimeout(() => setSaveStatus("idle"), 3000);
+        throw err;
+      }
+    },
+    [dbClient, companyId, userId, userData]
+  );
+
+  const updateCompanyField = useCallback(
+    async (field: string, value: any): Promise<void> => {
+      if (!dbClient || !companyId) {
+        console.warn("[v0] Cannot update: missing dbClient or companyId");
+        return;
+      }
+
+      const sanitizedValue = typeof value === "string" ? sanitizeInput(value) : value;
+      const oldValue = companyData[field];
+
+      setSaveStatus("saving");
+
+      try {
+        const companyRef = doc(dbClient, "EMPRESAS", companyId);
+        await updateDoc(companyRef, {
+          [field]: sanitizedValue,
+          updatedAt: new Date().toISOString(),
+        });
+
+        if (userId) {
+          await logCompanyAction(companyId, userId, `update_${field}`, oldValue, sanitizedValue, {
+            field,
+          });
+        }
+
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (err: any) {
+        console.error(`[v0] Error updating company field ${field}:`, err);
+        setError(err.message);
+        setSaveStatus("error");
+        
+        errorMonitor.captureException(err, {
+          tags: { operation: 'updateCompanyField', field },
+          extra: { companyId, userId, value: sanitizedValue },
+        });
+        
+        setTimeout(() => setSaveStatus("idle"), 3000);
+        throw err;
+      }
+    },
+    [dbClient, companyId, userId, companyData]
+  );
 
   return {
     companyData,
