@@ -1,6 +1,6 @@
 "use client"
 
-import { MessageSquare, Phone, Mail, Calendar } from "lucide-react"
+import { MessageSquare, Phone, Mail, Calendar } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 
 const automations = [
@@ -70,10 +70,13 @@ export default function Automations() {
               </div>
 
               <div className="flex gap-2 mt-6">
-                <Button className="flex-1 bg-[#00e1b4] hover:bg-[#00c9a0] text-[#001328] font-semibold">
+                <Button 
+                  onClick={() => console.log("[v0] More info clicked for:", automation.name)}
+                  className="flex-1 bg-[#00e1b4] hover:bg-[#00c9a0] text-[#001328] font-semibold">
                   Más información
                 </Button>
                 <Button
+                  onClick={() => console.log("[v0] Edit clicked for:", automation.name)}
                   variant="outline"
                   className="flex-1 border-[#1a3a52] text-[#00e1b4] hover:bg-[#1a3a52] bg-transparent"
                 >

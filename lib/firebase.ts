@@ -2,7 +2,8 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app"
 import { getAuth } from "firebase/auth"
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore"
+import { getFirestore } from "firebase/firestore"
+import { enableMultiTabIndexedDbPersistence } from "firebase/firestore"
 
 const isClient = typeof window !== "undefined"
 
@@ -25,7 +26,7 @@ if (isClient) {
   dbClient = getFirestore(firebaseApp)
 
   if (dbClient) {
-    enableIndexedDbPersistence(dbClient).catch((err) => {
+    enableMultiTabIndexedDbPersistence(dbClient).catch((err) => {
       if (err.code === "failed-precondition") {
         console.warn("[v0] Multiple tabs open, persistence can only be enabled in one tab at a time.")
       } else if (err.code === "unimplemented") {

@@ -57,8 +57,14 @@ export default function Account() {
           </div>
           <div className="text-right">
             <div className="flex gap-2">
-              <Button className="bg-[#00a2ff] hover:bg-[#0090dd] text-white">Actualizar plan</Button>
-              <Button variant="outline" className="border-[#1a3a52] text-[#96b5c7] bg-transparent">
+              <Button 
+                onClick={() => console.log("[v0] Update plan button clicked")}
+                className="bg-[#00a2ff] hover:bg-[#0090dd] text-white">
+                Actualizar plan
+              </Button>
+              <Button 
+                onClick={() => console.log("[v0] Cancel plan button clicked")}
+                variant="outline" className="border-[#1a3a52] text-[#96b5c7] bg-transparent">
                 Cancelar plan
               </Button>
             </div>
@@ -153,7 +159,11 @@ export default function Account() {
           <CardDescription className="text-[#96b5c7]">Personaliza cómo tu IA interactúa con clientes</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="bg-[#00a2ff] hover:bg-[#0090dd] text-white">Editar configuración IA</Button>
+          <Button 
+            onClick={() => console.log("[v0] Edit AI config button clicked")}
+            className="bg-[#00a2ff] hover:bg-[#0090dd] text-white">
+            Editar configuración IA
+          </Button>
         </CardContent>
       </Card>
     </div>

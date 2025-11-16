@@ -93,7 +93,10 @@ export default function AdminPanel() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              console.log("[v0] Admin tab clicked:", tab.id)
+              setActiveTab(tab.id)
+            }}
             className={`px-4 py-3 font-semibold text-sm transition-all duration-200 border-b-2 ${
               activeTab === tab.id
                 ? "border-primary text-primary"

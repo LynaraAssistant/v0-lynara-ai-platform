@@ -29,9 +29,11 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async () => {
+    console.log("[v0] Sidebar logout button clicked")
     setIsLoggingOut(true)
     try {
       await logout()
+      console.log("[v0] Logout successful, redirecting to home")
       window.location.href = "/"
     } catch (error) {
       console.error("[v0] Logout error:", error)
@@ -44,7 +46,10 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
     <>
       {/* Mobile menu button */}
       <button
-        onClick={onToggle}
+        onClick={() => {
+          console.log("[v0] Mobile menu toggle clicked, current state:", isOpen)
+          onToggle()
+        }}
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-card border border-border hover:bg-muted transition-all duration-200 hover:shadow-lg"
         aria-label="Toggle sidebar menu"
       >
@@ -55,7 +60,10 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
       {isOpen && (
         <div
           className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30 animate-fade-in"
-          onClick={onToggle}
+          onClick={() => {
+            console.log("[v0] Sidebar overlay clicked, toggling sidebar")
+            onToggle()
+          }}
           aria-hidden="true"
         />
       )}
@@ -83,6 +91,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
                 <button
                   key={item.id}
                   onClick={() => {
+                    console.log("[v0] Sidebar navigation clicked:", item.id)
                     onSectionChange(item.id)
                     if (window.innerWidth < 768) onToggle()
                   }}
@@ -102,6 +111,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
             {role === "admin" && (
               <button
                 onClick={() => {
+                  console.log("[v0] Admin section clicked")
                   onSectionChange("admin")
                   if (window.innerWidth < 768) onToggle()
                 }}

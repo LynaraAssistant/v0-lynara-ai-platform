@@ -4,17 +4,7 @@
  * Comprehensive admin operations for managing the multi-tenant platform
  */
 
-import {
-  collection,
-  query,
-  getDocs,
-  where,
-  orderBy,
-  limit,
-  deleteDoc,
-  doc,
-} from "firebase/firestore"
-import { dbClient } from "@/lib/firebase"
+import { getAdminFirestore } from "@/lib/firebase-admin"
 import { setDocument, updateDocument, getDocument, deleteDocument } from "./firestore"
 import { writeLog } from "./logging"
 
@@ -23,11 +13,11 @@ import { writeLog } from "./logging"
  */
 export async function getAllCompanies(): Promise<any[]> {
   try {
-    const companiesRef = collection(dbClient, "EMPRESAS")
-    const q = query(companiesRef, orderBy("createdAt", "desc"))
-    const querySnapshot = await getDocs(q)
+    const db = getAdminFirestore()
+    const companiesRef = db.collection("EMPRESAS")
+    const snapshot = await companiesRef.orderBy("createdAt", "desc").get()
 
-    return querySnapshot.docs.map((doc) => ({
+    return snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }))
@@ -44,12 +34,13 @@ export async function getAllUsers(): Promise<any[]> {
   try {
     const companies = await getAllCompanies()
     const allUsers: any[] = []
+    const db = getAdminFirestore()
 
     for (const company of companies) {
-      const usersRef = collection(dbClient, `EMPRESAS/${company.id}/usuarios`)
-      const querySnapshot = await getDocs(usersRef)
+      const usersRef = db.collection(`EMPRESAS/${company.id}/usuarios`)
+      const snapshot = await usersRef.get()
 
-      const users = querySnapshot.docs.map((doc) => ({
+      const users = snapshot.docs.map((doc) => ({
         id: doc.id,
         companyId: company.id,
         companyName: company.nombre_empresa || "Sin nombre",
@@ -76,9 +67,11 @@ export async function updateCompanyPlan(
   adminUserId: string
 ): Promise<void> {
   try {
-    await updateDocument(`EMPRESAS/${companyId}`, {
+    const db = getAdminFirestore()
+    await db.collection("EMPRESAS").doc(companyId).update({
       plan,
       status,
+      updatedAt: new Date().toISOString(),
     })
 
     await writeLog({
@@ -102,23 +95,30 @@ export async function updateCompanyPlan(
  */
 export async function deleteCompany(companyId: string, adminUserId: string): Promise<void> {
   try {
+    const db = getAdminFirestore()
+    
     // Delete all users
-    const usersRef = collection(dbClient, `EMPRESAS/${companyId}/usuarios`)
-    const usersSnapshot = await getDocs(usersRef)
+    const usersRef = db.collection(`EMPRESAS/${companyId}/usuarios`)
+    const usersSnapshot = await usersRef.get()
 
-    for (const userDoc of usersSnapshot.docs) {
-      await deleteDoc(userDoc.ref)
-    }
+    const batch = db.batch()
+    usersSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref)
+    })
 
     // Delete operational data
     try {
-      await deleteDocument(`EMPRESAS/${companyId}/datos_operativos/estado_actual`)
+      const opDataRef = db.doc(`EMPRESAS/${companyId}/datos_operativos/estado_actual`)
+      batch.delete(opDataRef)
     } catch (e) {
       // May not exist
     }
 
     // Delete company document
-    await deleteDocument(`EMPRESAS/${companyId}`)
+    const companyRef = db.collection("EMPRESAS").doc(companyId)
+    batch.delete(companyRef)
+
+    await batch.commit()
 
     await writeLog({
       collection: "logs_empresa",
@@ -142,8 +142,10 @@ export async function updateUserRole(
   adminUserId: string
 ): Promise<void> {
   try {
-    await updateDocument(`EMPRESAS/${companyId}/usuarios/${userId}`, {
+    const db = getAdminFirestore()
+    await db.collection(`EMPRESAS/${companyId}/usuarios`).doc(userId).update({
       role,
+      updatedAt: new Date().toISOString(),
     })
 
     await writeLog({
@@ -171,7 +173,8 @@ export async function deleteUser(
   adminUserId: string
 ): Promise<void> {
   try {
-    await deleteDocument(`EMPRESAS/${companyId}/usuarios/${userId}`)
+    const db = getAdminFirestore()
+    await db.collection(`EMPRESAS/${companyId}/usuarios`).doc(userId).delete()
 
     await writeLog({
       collection: "logs_usuario",

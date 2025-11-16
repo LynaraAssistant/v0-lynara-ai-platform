@@ -17,6 +17,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async () => {
+    console.log("[v0] Header logout button clicked")
     setIsLoggingOut(true)
     try {
       await logout()
@@ -40,7 +41,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-4">
           {mounted && (
             <button
-              onClick={() => toggleTheme()}
+              onClick={() => {
+                console.log("[v0] Theme toggle clicked, current theme:", theme)
+                toggleTheme()
+              }}
               className="hidden sm:flex items-center justify-center p-2 rounded-lg border border-border hover:bg-muted transition-all duration-200"
               aria-label="Toggle theme"
             >
@@ -53,14 +57,20 @@ export default function Header({ onMenuClick }: HeaderProps) {
           )}
 
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              console.log("[v0] Header logout button clicked")
+              handleLogout()
+            }}
             disabled={isLoggingOut}
             className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive hover:text-destructive transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-destructive/30"
           >
             <LogOut className="w-4 h-4" />
             <span className="text-sm font-medium">{isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}</span>
           </button>
-          <button onClick={onMenuClick} className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors">
+          <button onClick={() => {
+            console.log("[v0] Mobile menu button clicked")
+            onMenuClick()
+          }} className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors">
             <Menu className="w-5 h-5 text-primary" />
           </button>
         </div>

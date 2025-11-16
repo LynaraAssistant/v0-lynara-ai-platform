@@ -1,8 +1,8 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { TrendingUp, Phone, Mail, Calendar, Clock, Zap } from "lucide-react"
+import { TrendingUp, Phone, Mail, Calendar, Clock, Zap } from 'lucide-react'
 import { WelcomeBanner } from "./welcome-banner"
 
 const metricsData = [
@@ -27,9 +27,14 @@ const metrics = [
 export default function Home() {
   const router = useRouter()
 
+  const handleQuickAction = (action: string) => {
+    console.log("[v0] Quick action clicked:", action)
+    router.push(`/dashboard?section=${action}`)
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <WelcomeBanner onQuickActionClick={(action) => router.push(`/dashboard?section=${action}`)} />
+      <WelcomeBanner onQuickActionClick={handleQuickAction} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {metrics.map((metric, index) => {
