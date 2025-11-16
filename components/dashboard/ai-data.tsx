@@ -1,45 +1,30 @@
-"use client"
+'use client'
 
-import type React from "react"
+import type React from 'react'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { CheckCircle2 } from "lucide-react"
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { CheckCircle2 } from 'lucide-react'
+import { useFirestoreSync } from '@/hooks/useFirestoreSync'
 
 export default function AIData() {
+  const { companyData, updateCompanyField, loading } = useFirestoreSync()
   const [saved, setSaved] = useState(false)
-  const [formData, setFormData] = useState({
-    businessName: "Mi Negocio",
-    sector: "Tecnología",
-    communicationTone: "Profesional",
-    brandStyle: "Innovador y moderno",
-    serviceType: "SaaS",
-    businessDescription: "Plataforma de automatización con IA",
-    teamSize: "5",
-    targetAudience: "Empresas",
-    preferredLanguages: "Español, Inglés",
-    communicationPriority: "Correos",
-    businessHours: "9:00 - 18:00",
-    timezone: "UTC-5",
-    country: "Colombia",
-    city: "Bogotá",
-    websiteUrl: "https://example.com",
-    customerTypes: "Empresas medianas, startups, agencias de marketing",
-    additionalContext:
-      "Tengo 45 mesas en el restaurante, 2 turnos de atención (13:00-14:45 y 15:00-17:00), capacidad para 200 personas por turno y 3 empleados en sala. Adaptar respuestas según esto.",
-  })
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
 
   const handleSave = () => {
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#00e1b4]"></div>
+      </div>
+    )
   }
 
   return (
@@ -66,27 +51,24 @@ export default function AIData() {
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Nombre comercial</Label>
               <Input
-                name="businessName"
-                value={formData.businessName}
-                onChange={handleChange}
+                value={companyData.businessName || ''}
+                onChange={(e) => updateCompanyField('businessName', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Sector</Label>
               <Input
-                name="sector"
-                value={formData.sector}
-                onChange={handleChange}
+                value={companyData.sector || ''}
+                onChange={(e) => updateCompanyField('sector', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Tono de comunicación</Label>
               <select
-                name="communicationTone"
-                value={formData.communicationTone}
-                onChange={(e) => setFormData((prev) => ({ ...prev, communicationTone: e.target.value }))}
+                value={companyData.communicationTone || 'Profesional'}
+                onChange={(e) => updateCompanyField('communicationTone', e.target.value)}
                 className="w-full px-3 py-2 bg-[#0a1f35] border border-[#1a3a52] text-[#eaf6ff] rounded-lg"
               >
                 <option>Profesional</option>
@@ -98,9 +80,8 @@ export default function AIData() {
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Lenguaje o estilo de marca</Label>
               <Input
-                name="brandStyle"
-                value={formData.brandStyle}
-                onChange={handleChange}
+                value={companyData.brandStyle || ''}
+                onChange={(e) => updateCompanyField('brandStyle', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
@@ -114,27 +95,24 @@ export default function AIData() {
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Tipo de servicio o producto</Label>
               <Input
-                name="serviceType"
-                value={formData.serviceType}
-                onChange={handleChange}
+                value={companyData.serviceType || ''}
+                onChange={(e) => updateCompanyField('serviceType', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Tamaño del equipo</Label>
               <Input
-                name="teamSize"
-                value={formData.teamSize}
-                onChange={handleChange}
+                value={companyData.teamSize || ''}
+                onChange={(e) => updateCompanyField('teamSize', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div className="md:col-span-2">
               <Label className="text-[#eaf6ff] mb-2 block">Descripción del negocio</Label>
               <Textarea
-                name="businessDescription"
-                value={formData.businessDescription}
-                onChange={handleChange}
+                value={companyData.businessDescription || ''}
+                onChange={(e) => updateCompanyField('businessDescription', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
                 rows={3}
               />
@@ -151,45 +129,40 @@ export default function AIData() {
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Horario de atención</Label>
               <Input
-                name="businessHours"
-                value={formData.businessHours}
-                onChange={handleChange}
+                value={companyData.businessHours || ''}
+                onChange={(e) => updateCompanyField('businessHours', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Zona horaria</Label>
               <Input
-                name="timezone"
-                value={formData.timezone}
-                onChange={handleChange}
+                value={companyData.timezone || ''}
+                onChange={(e) => updateCompanyField('timezone', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">País</Label>
               <Input
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
+                value={companyData.country || ''}
+                onChange={(e) => updateCompanyField('country', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Ciudad</Label>
               <Input
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
+                value={companyData.city || ''}
+                onChange={(e) => updateCompanyField('city', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div className="md:col-span-2">
               <Label className="text-[#eaf6ff] mb-2 block">URL de sitio web</Label>
               <Input
-                name="websiteUrl"
-                value={formData.websiteUrl}
-                onChange={handleChange}
+                value={companyData.websiteUrl || ''}
+                onChange={(e) => updateCompanyField('websiteUrl', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
@@ -204,9 +177,8 @@ export default function AIData() {
             <div>
               <Label className="text-[#eaf6ff] mb-2 block">Tipos de clientes con los que trabaja habitualmente</Label>
               <Textarea
-                name="customerTypes"
-                value={formData.customerTypes}
-                onChange={handleChange}
+                value={companyData.customerTypes || ''}
+                onChange={(e) => updateCompanyField('customerTypes', e.target.value)}
                 placeholder="Ejemplo: Empresas medianas, startups, agencias de marketing, autónomos..."
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
                 rows={3}
@@ -218,9 +190,8 @@ export default function AIData() {
                 negocio que creas relevantes y no los hayas puesto antes)
               </Label>
               <Textarea
-                name="additionalContext"
-                value={formData.additionalContext}
-                onChange={handleChange}
+                value={companyData.additionalContext || ''}
+                onChange={(e) => updateCompanyField('additionalContext', e.target.value)}
                 placeholder="Ejemplo: Tengo 45 mesas en el restaurante, 2 turnos de atención (13:00-14:45 y 15:00-17:00), capacidad para 200 personas por turno y 3 empleados en sala. Adaptar respuestas según esto."
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
                 rows={5}

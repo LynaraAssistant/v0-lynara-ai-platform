@@ -1,48 +1,48 @@
-"use client"
+'use client'
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
-import { auth } from "@/lib/firebase"
-import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import Link from "next/link"
+import type React from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { authClient } from '@/lib/firebase'
+import { useAuth } from '@/lib/auth-context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import Link from 'next/link'
 
 export default function RegisterPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/dashboard")
+      router.push('/dashboard')
     }
   }, [user, loading, router])
 
   const validateForm = (): boolean => {
     if (!name.trim()) {
-      setError("El nombre es requerido")
+      setError('El nombre es requerido')
       return false
     }
     if (!email.trim()) {
-      setError("El correo es requerido")
+      setError('El correo es requerido')
       return false
     }
     if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres")
+      setError('La contraseña debe tener al menos 6 caracteres')
       return false
     }
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden")
+      setError('Las contraseñas no coinciden')
       return false
     }
     return true
@@ -50,7 +50,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
+    setError('')
 
     if (!validateForm()) {
       return
@@ -59,15 +59,18 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const userCredential = await createUserWithEmailAndPassword(authClient, email, password)
 
       await updateProfile(userCredential.user, {
         displayName: name,
       })
 
-      router.push("/dashboard")
+      const companyId = crypto.randomUUID()
+      localStorage.setItem('companyId', companyId)
+
+      router.push('/dashboard')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error al registrarse"
+      const errorMessage = err instanceof Error ? err.message : 'Error al registrarse'
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -139,7 +142,7 @@ export default function RegisterPage() {
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -152,7 +155,7 @@ export default function RegisterPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#96b5c7] hover:text-[#00e1b4]"
                 >
-                  {showPassword ? "Ocultar" : "Mostrar"}
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
             </div>
@@ -163,7 +166,7 @@ export default function RegisterPage() {
               </Label>
               <Input
                 id="confirmPassword"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -184,12 +187,12 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full bg-[#00e1b4] hover:bg-[#00c9a0] text-[#001328] font-semibold py-2 rounded-lg shadow-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,225,180,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Registrando..." : "Registrarse"}
+              {isLoading ? 'Registrando...' : 'Registrarse'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-[#96b5c7]">
-            ¿Ya tienes cuenta?{" "}
+            ¿Ya tienes cuenta?{' '}
             <Link href="/login" className="text-[#00e1b4] hover:text-[#00a2ff] font-semibold">
               Inicia sesión
             </Link>

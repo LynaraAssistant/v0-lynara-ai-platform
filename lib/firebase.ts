@@ -1,11 +1,10 @@
-"use client";
+'use client';
 
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
-// Firebase solo debe iniciarse en cliente
-const isClient = typeof window !== "undefined";
+const isClient = typeof window !== 'undefined';
 
 let app: any = null;
 let auth: any = null;

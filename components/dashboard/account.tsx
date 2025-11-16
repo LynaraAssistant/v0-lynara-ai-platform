@@ -1,22 +1,24 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle2 } from "lucide-react"
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CheckCircle2 } from 'lucide-react'
+import { useFirestoreSync } from '@/hooks/useFirestoreSync'
 
 export default function Account() {
+  const { userData, updateUserField, loading } = useFirestoreSync()
   const [updated, setUpdated] = useState(false)
-  const [userInfo, setUserInfo] = useState({
-    fullName: "Juan García",
-    company: "Mi Empresa",
-    phone: "+34 600 123 456",
-    email: "juan@example.com",
-    country: "España",
-    location: "Madrid",
-  })
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#00e1b4]"></div>
+      </div>
+    )
+  }
 
   const handleSave = () => {
     setUpdated(true)
@@ -58,16 +60,16 @@ export default function Account() {
           <div className="space-y-2">
             <Label className="text-[#eaf6ff]">Nombre completo</Label>
             <Input
-              value={userInfo.fullName}
-              onChange={(e) => setUserInfo({ ...userInfo, fullName: e.target.value })}
+              value={userData.fullName || ''}
+              onChange={(e) => updateUserField('fullName', e.target.value)}
               className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
             />
           </div>
           <div className="space-y-2">
             <Label className="text-[#eaf6ff]">Empresa</Label>
             <Input
-              value={userInfo.company}
-              onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })}
+              value={userData.company || ''}
+              onChange={(e) => updateUserField('company', e.target.value)}
               className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
             />
           </div>
@@ -75,16 +77,16 @@ export default function Account() {
             <div className="space-y-2">
               <Label className="text-[#eaf6ff]">Teléfono</Label>
               <Input
-                value={userInfo.phone}
-                onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
+                value={userData.phone || ''}
+                onChange={(e) => updateUserField('phone', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#eaf6ff]">Correo electrónico</Label>
               <Input
-                value={userInfo.email}
-                onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
+                value={userData.email || ''}
+                onChange={(e) => updateUserField('email', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
@@ -93,16 +95,16 @@ export default function Account() {
             <div className="space-y-2">
               <Label className="text-[#eaf6ff]">País</Label>
               <Input
-                value={userInfo.country}
-                onChange={(e) => setUserInfo({ ...userInfo, country: e.target.value })}
+                value={userData.country || ''}
+                onChange={(e) => updateUserField('country', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[#eaf6ff]">Ubicación</Label>
               <Input
-                value={userInfo.location}
-                onChange={(e) => setUserInfo({ ...userInfo, location: e.target.value })}
+                value={userData.location || ''}
+                onChange={(e) => updateUserField('location', e.target.value)}
                 className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
               />
             </div>

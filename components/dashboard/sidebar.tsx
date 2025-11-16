@@ -1,9 +1,9 @@
 "use client"
 
-import { Home, TrendingUp, Zap, Brain, User, HelpCircle, Menu, X, LogOut, Shield } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Home, TrendingUp, Zap, Brain, User, HelpCircle, Menu, X, LogOut, Shield } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { signOut } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { authClient } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
 import { useState } from "react"
 import { Logo } from "../logo"
@@ -33,7 +33,8 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await signOut(auth)
+      await signOut(authClient)
+      localStorage.removeItem('companyId')
       router.push("/")
     } catch (error) {
       console.log("[v0] Logout error:", error)

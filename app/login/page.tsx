@@ -1,41 +1,43 @@
-"use client"
+'use client'
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { signInWithEmailAndPassword } from "firebase/auth"
-import { auth } from "@/lib/firebase"
-import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import Link from "next/link"
+import type React from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { authClient } from '@/lib/firebase'
+import { useAuth } from '@/lib/auth-context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/dashboard")
+      router.push('/dashboard')
     }
   }, [user, loading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
+    setError('')
     setIsLoading(true)
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      router.push("/dashboard")
+      await signInWithEmailAndPassword(authClient, email, password)
+      const companyId = localStorage.getItem('companyId') || 'default-company'
+      localStorage.setItem('companyId', companyId)
+      router.push('/dashboard')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error al iniciar sesión"
+      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -91,7 +93,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -104,7 +106,7 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#96b5c7] hover:text-[#00e1b4]"
                 >
-                  {showPassword ? "Ocultar" : "Mostrar"}
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
             </div>
@@ -120,12 +122,12 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full bg-[#00e1b4] hover:bg-[#00c9a0] text-[#001328] font-semibold py-2 rounded-lg shadow-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,225,180,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-[#96b5c7]">
-            ¿Aún no tienes cuenta?{" "}
+            ¿Aún no tienes cuenta?{' '}
             <Link href="/register" className="text-[#00e1b4] hover:text-[#00a2ff] font-semibold">
               Regístrate aquí
             </Link>
