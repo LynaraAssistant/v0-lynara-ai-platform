@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Edit2, Trash2, Plus, Search, AlertCircle } from 'lucide-react'
+import { Edit2, Trash2, Search, AlertCircle } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getAllCompanies, updateCompanyPlan, deleteCompany } from "@/utils/firebase/admin"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 
@@ -32,8 +31,18 @@ export default function CompaniesTable({ onStatsUpdate }: CompaniesTableProps) {
   const loadCompanies = async () => {
     try {
       setLoading(true)
-      const data = await getAllCompanies()
-      setCompanies(data)
+      const response = await fetch("/api/admin/companies")
+      const result = await response.json()
+      
+      if (result.success) {
+        setCompanies(result.data)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -45,6 +54,7 @@ export default function CompaniesTable({ onStatsUpdate }: CompaniesTableProps) {
     }
   }
 
+
   const filteredCompanies = companies.filter(
     (c) =>
       c.nombre_empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -55,21 +65,34 @@ export default function CompaniesTable({ onStatsUpdate }: CompaniesTableProps) {
     if (!editingCompany || !user) return
 
     try {
-      await updateCompanyPlan(
-        editingCompany.id,
-        editingCompany.plan,
-        editingCompany.status,
-        user.uid
-      )
-
-      toast({
-        title: "Éxito",
-        description: "Empresa actualizada correctamente",
+      const response = await fetch(`/api/admin/companies/${editingCompany.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: editingCompany.plan,
+          status: editingCompany.status,
+          adminUserId: user.uid,
+        }),
       })
 
-      await loadCompanies()
-      await onStatsUpdate()
-      setEditingCompany(null)
+      const result = await response.json()
+
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: "Empresa actualizada correctamente",
+        })
+
+        await loadCompanies()
+        await onStatsUpdate()
+        setEditingCompany(null)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -83,16 +106,30 @@ export default function CompaniesTable({ onStatsUpdate }: CompaniesTableProps) {
     if (!user) return
 
     try {
-      await deleteCompany(companyId, user.uid)
-
-      toast({
-        title: "Éxito",
-        description: "Empresa eliminada correctamente",
+      const response = await fetch(`/api/admin/companies/${companyId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminUserId: user.uid }),
       })
 
-      await loadCompanies()
-      await onStatsUpdate()
-      setDeleteConfirm(null)
+      const result = await response.json()
+
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: "Empresa eliminada correctamente",
+        })
+
+        await loadCompanies()
+        await onStatsUpdate()
+        setDeleteConfirm(null)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
       toast({
         title: "Error",

@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getAllUsers, updateUserRole, deleteUser } from "@/utils/firebase/admin"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 
@@ -28,8 +27,18 @@ export default function UsersTable() {
   const loadUsers = async () => {
     try {
       setLoading(true)
-      const data = await getAllUsers()
-      setUsers(data)
+      const response = await fetch("/api/admin/users")
+      const result = await response.json()
+      
+      if (result.success) {
+        setUsers(result.data)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -52,20 +61,35 @@ export default function UsersTable() {
     if (!editingUser || !user) return
 
     try {
-      await updateUserRole(
-        editingUser.companyId,
-        editingUser.id,
-        editingUser.role,
-        user.uid
+      const response = await fetch(
+        `/api/admin/users/${editingUser.companyId}/${editingUser.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: editingUser.role,
+            adminUserId: user.uid,
+          }),
+        }
       )
 
-      toast({
-        title: "Éxito",
-        description: "Usuario actualizado correctamente",
-      })
+      const result = await response.json()
 
-      await loadUsers()
-      setEditingUser(null)
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: "Usuario actualizado correctamente",
+        })
+
+        await loadUsers()
+        setEditingUser(null)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -79,15 +103,32 @@ export default function UsersTable() {
     if (!deleteConfirm || !user) return
 
     try {
-      await deleteUser(deleteConfirm.companyId, deleteConfirm.userId, user.uid)
+      const response = await fetch(
+        `/api/admin/users/${deleteConfirm.companyId}/${deleteConfirm.userId}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adminUserId: user.uid }),
+        }
+      )
 
-      toast({
-        title: "Éxito",
-        description: "Usuario eliminado correctamente",
-      })
+      const result = await response.json()
 
-      await loadUsers()
-      setDeleteConfirm(null)
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: "Usuario eliminado correctamente",
+        })
+
+        await loadUsers()
+        setDeleteConfirm(null)
+      } else {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
       toast({
         title: "Error",

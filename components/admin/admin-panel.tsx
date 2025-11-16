@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Users, Building2, Activity, TrendingUp } from 'lucide-react'
 import CompaniesTable from "./companies-table"
 import UsersTable from "./users-table"
-import { getPlatformStats } from "@/utils/firebase/admin"
 import { Card } from "@/components/ui/card"
 
 type TabType = "overview" | "companies" | "users"
@@ -25,8 +24,14 @@ export default function AdminPanel() {
 
   const loadStats = async () => {
     try {
-      const platformStats = await getPlatformStats()
-      setStats(platformStats)
+      const response = await fetch("/api/admin/stats")
+      const result = await response.json()
+      
+      if (result.success) {
+        setStats(result.data)
+      } else {
+        console.error("Error loading stats:", result.error)
+      }
     } catch (error) {
       console.error("Error loading stats:", error)
     } finally {

@@ -1,10 +1,4 @@
-// Monitoring y error tracking centralizado
-
-interface MonitoringConfig {
-  dsn?: string
-  environment: 'development' | 'staging' | 'production'
-  enableConsoleLogging: boolean
-}
+// Monitoring y error tracking centralizado - sin dependencias externas
 
 interface ErrorContext {
   user?: {
@@ -17,27 +11,20 @@ interface ErrorContext {
 }
 
 class ErrorMonitor {
-  private config: MonitoringConfig
+  private environment: 'development' | 'staging' | 'production'
+  private enableConsoleLogging: boolean
   private isInitialized = false
 
   constructor() {
-    this.config = {
-      environment: (process.env.NODE_ENV as any) || 'development',
-      enableConsoleLogging: process.env.NODE_ENV === 'development',
-    }
+    this.environment = (process.env.NODE_ENV as any) || 'development'
+    this.enableConsoleLogging = process.env.NODE_ENV === 'development'
   }
 
-  init(dsn?: string) {
+  init() {
     if (this.isInitialized) return
-
-    this.config.dsn = dsn
 
     // Solo inicializar en browser
     if (typeof window === 'undefined') return
-
-    // Aquí se integraría Sentry o similar
-    // import * as Sentry from "@sentry/nextjs"
-    // Sentry.init({ dsn, environment: this.config.environment })
 
     // Capturar errores no manejados
     window.addEventListener('error', (event) => {
@@ -66,41 +53,30 @@ class ErrorMonitor {
   }
 
   captureException(error: Error, context?: ErrorContext) {
-    if (this.config.enableConsoleLogging) {
+    if (this.enableConsoleLogging) {
       console.error('[v0] Captured Exception:', error, context)
     }
 
-    // En producción, enviar a Sentry
-    // if (this.config.environment === 'production') {
-    //   Sentry.captureException(error, {
-    //     user: context?.user,
-    //     tags: context?.tags,
-    //     extra: context?.extra,
-    //   })
-    // }
-
-    // También podríamos enviar a backend custom
-    this.sendToBackend(error, context)
+    // En producción, enviar a backend custom
+    if (this.environment === 'production') {
+      this.sendToBackend(error, context)
+    }
   }
 
   captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info') {
-    if (this.config.enableConsoleLogging) {
+    if (this.enableConsoleLogging) {
       console[level]('[v0] Captured Message:', message)
     }
-
-    // Sentry.captureMessage(message, level)
   }
 
   setUser(user: { id: string; email: string; role: string }) {
-    // Sentry.setUser(user)
-    if (this.config.enableConsoleLogging) {
+    if (this.enableConsoleLogging) {
       console.info('[v0] User context set:', user)
     }
   }
 
   clearUser() {
-    // Sentry.setUser(null)
-    if (this.config.enableConsoleLogging) {
+    if (this.enableConsoleLogging) {
       console.info('[v0] User context cleared')
     }
   }

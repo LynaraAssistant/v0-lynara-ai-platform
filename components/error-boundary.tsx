@@ -41,11 +41,11 @@ export class ErrorBoundary extends React.Component<
       errorInfo,
     })
 
-    // Send to monitoring service (Sentry, LogRocket, etc.)
     if (typeof window !== 'undefined' && (window as any).errorMonitor) {
       (window as any).errorMonitor.captureException(error, {
-        errorInfo,
-        componentStack: errorInfo.componentStack,
+        extra: {
+          componentStack: errorInfo.componentStack,
+        },
       })
     }
   }

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 }
 
 if (typeof window !== 'undefined') {
-  errorMonitor.init(process.env.NEXT_PUBLIC_SENTRY_DSN)
+  errorMonitor.init()
 }
 
 export default function RootLayout({
