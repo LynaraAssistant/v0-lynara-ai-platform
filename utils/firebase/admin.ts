@@ -88,11 +88,11 @@ export async function updateCompanyPlan(
     })
 
     await writeLog({
+      companyId,
       collection: "logs_empresa",
       action: "company_plan_updated",
       userId: adminUserId,
       metadata: {
-        companyId,
         newPlan: plan,
         newStatus: status,
       },
@@ -110,7 +110,6 @@ export async function deleteCompany(companyId: string, adminUserId: string): Pro
   try {
     if (!dbClient) throw new Error("Firestore no inicializado")
     
-    // Delete all users first
     const usersRef = collection(dbClient, `EMPRESAS/${companyId}/usuarios`)
     const usersSnapshot = await getDocs(usersRef)
 
@@ -118,11 +117,11 @@ export async function deleteCompany(companyId: string, adminUserId: string): Pro
       await deleteDoc(userDoc.ref)
     }
 
-    // Delete company document
     const companyRef = doc(dbClient, "EMPRESAS", companyId)
     await deleteDoc(companyRef)
 
     await writeLog({
+      companyId,
       collection: "logs_empresa",
       action: "company_deleted",
       userId: adminUserId,
@@ -153,12 +152,12 @@ export async function updateUserRole(
     })
 
     await writeLog({
+      companyId,
       collection: "logs_usuario",
       action: "user_role_updated",
       userId: adminUserId,
       metadata: {
         targetUserId: userId,
-        companyId,
         newRole: role,
       },
     })
@@ -183,12 +182,12 @@ export async function deleteUser(
     await deleteDoc(userRef)
 
     await writeLog({
+      companyId,
       collection: "logs_usuario",
       action: "user_deleted",
       userId: adminUserId,
       metadata: {
         deletedUserId: userId,
-        companyId,
       },
     })
   } catch (error) {

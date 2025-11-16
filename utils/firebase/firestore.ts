@@ -19,7 +19,7 @@ import {
   type DocumentData,
   type QueryConstraint,
   serverTimestamp,
-} from "firebase/auth"
+} from "firebase/firestore"
 import { dbClient } from "@/lib/firebase"
 import { writeLog } from "./logging"
 
