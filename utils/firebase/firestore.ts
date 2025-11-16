@@ -1,8 +1,10 @@
 /**
- * Firestore Operations Utilities
+ * Firestore Operations Utilities (v2.0)
  * 
  * Provides high-level abstractions for Firestore operations
  * with proper multi-tenant isolation, error handling, and logging.
+ * 
+ * Last updated: 2025-01-16
  */
 
 import {
