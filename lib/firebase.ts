@@ -1,14 +1,14 @@
-'use client';
+"use client"
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from "firebase/app"
+import { getAuth } from "firebase/auth"
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore"
 
-const isClient = typeof window !== 'undefined';
+const isClient = typeof window !== "undefined"
 
-let app: any = null;
-let auth: any = null;
-let db: any = null;
+let firebaseApp = null
+let authClient = null
+let dbClient = null
 
 if (isClient) {
   const firebaseConfig = {
@@ -18,13 +18,21 @@ if (isClient) {
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  };
+  }
 
-  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
+  firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+  authClient = getAuth(firebaseApp)
+  dbClient = getFirestore(firebaseApp)
+
+  if (dbClient) {
+    enableIndexedDbPersistence(dbClient).catch((err) => {
+      if (err.code === "failed-precondition") {
+        console.warn("[v0] Multiple tabs open, persistence can only be enabled in one tab at a time.")
+      } else if (err.code === "unimplemented") {
+        console.warn("[v0] Browser doesn't support offline persistence")
+      }
+    })
+  }
 }
 
-export const firebaseApp = app;
-export const authClient = auth;
-export const dbClient = db;
+export { firebaseApp, authClient, dbClient }

@@ -2,8 +2,6 @@
 
 import { Home, TrendingUp, Zap, Brain, User, HelpCircle, Menu, X, LogOut, Shield } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { signOut } from "firebase/auth"
-import { authClient } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
 import { useState } from "react"
 import { Logo } from "../logo"
@@ -27,17 +25,17 @@ interface SidebarProps {
 
 export default function Sidebar({ activeSection, onSectionChange, isOpen, onToggle, role }: SidebarProps) {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await signOut(authClient)
-      localStorage.removeItem('companyId')
-      router.push("/")
+      await logout()
+      window.location.href = "/"
     } catch (error) {
-      console.log("[v0] Logout error:", error)
+      console.error("[v0] Logout error:", error)
+      alert('Error al cerrar sesión. Por favor intenta de nuevo.')
       setIsLoggingOut(false)
     }
   }

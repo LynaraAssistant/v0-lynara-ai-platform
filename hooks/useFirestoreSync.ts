@@ -1,137 +1,245 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { dbClient } from '@/lib/firebase';
-import { useAuth } from '@/lib/auth-context';
+import { useState, useEffect } from "react";
+import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
+import { dbClient } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
+import { logCompanyAction, logUserAction } from "@/utils/firebase/logging";
+import { sanitizeInput } from "@/utils/security/sanitize";
 
-interface FirestoreSyncData {
-  companyData: Record<string, any>;
-  userData: Record<string, any>;
-  operationalData: Record<string, any>;
+interface CompanyData {
+  // Identity
+  businessName?: string;
+  sector?: string;
+  communicationTone?: string;
+  brandStyle?: string;
+  // Business Context
+  serviceType?: string;
+  teamSize?: string;
+  businessDescription?: string;
+  // Operational
+  businessHours?: string;
+  timezone?: string;
+  country?: string;
+  city?: string;
+  websiteUrl?: string;
+  // Advanced
+  customerTypes?: string;
+  additionalContext?: string;
+  [key: string]: any;
+}
+
+interface UserData {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  language?: string;
+  [key: string]: any;
+}
+
+interface OperationalData {
+  [key: string]: any;
+}
+
+interface FirestoreSyncReturn {
+  companyData: CompanyData;
+  userData: UserData;
+  operationalData: OperationalData;
   updateUserField: (field: string, value: any) => Promise<void>;
   updateCompanyField: (field: string, value: any) => Promise<void>;
   loading: boolean;
+  error: string | null;
+  saveStatus: "idle" | "saving" | "saved" | "error";
 }
 
-export function useFirestoreSync(): FirestoreSyncData {
-  const { user } = useAuth();
-  const [companyData, setCompanyData] = useState<Record<string, any>>({});
-  const [userData, setUserData] = useState<Record<string, any>>({});
-  const [operationalData, setOperationalData] = useState<Record<string, any>>({});
+export function useFirestoreSync(): FirestoreSyncReturn {
+  const { user, companyId: authCompanyId } = useAuth();
+  const [companyData, setCompanyData] = useState<CompanyData>({});
+  const [userData, setUserData] = useState<UserData>({});
+  const [operationalData, setOperationalData] = useState<OperationalData>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  // Get companyId from localStorage (set during login/registration)
-  const companyId = typeof window !== 'undefined' ? localStorage.getItem('companyId') : null;
+  const companyId = authCompanyId || (typeof window !== "undefined" ? localStorage.getItem("companyId") : null);
   const userId = user?.uid;
 
-  // Listen to company data in real-time
   useEffect(() => {
     if (!dbClient || !companyId) {
       setLoading(false);
       return;
     }
 
-    const companyRef = doc(dbClient, 'EMPRESAS', companyId);
-    const unsubscribe = onSnapshot(
-      companyRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          setCompanyData(snapshot.data() || {});
+    try {
+      const companyRef = doc(dbClient, "EMPRESAS", companyId);
+      const unsubscribe = onSnapshot(
+        companyRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            setCompanyData(snapshot.data() as CompanyData);
+          } else {
+            setDoc(companyRef, {
+              businessName: "",
+              sector: "",
+              createdAt: new Date().toISOString(),
+            }).catch((err) => console.error("[v0] Error initializing company:", err));
+          }
+        },
+        (err) => {
+          console.error("[v0] Error listening to company data:", err);
+          setError(err.message);
         }
-      },
-      (error) => {
-        console.error('Error listening to company data:', error);
-        setLoading(false);
-      }
-    );
+      );
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (err: any) {
+      console.error("[v0] Error setting up company listener:", err);
+      setError(err.message);
+      setLoading(false);
+    }
   }, [companyId]);
 
-  // Listen to user data in real-time
   useEffect(() => {
     if (!dbClient || !companyId || !userId) {
       setLoading(false);
-      return;
-    }
-
-    const userRef = doc(dbClient, 'EMPRESAS', companyId, 'usuarios', userId);
-    const unsubscribe = onSnapshot(
-      userRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          setUserData(snapshot.data() || {});
-        }
-      },
-      (error) => {
-        console.error('Error listening to user data:', error);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [companyId, userId]);
-
-  // Listen to operational data in real-time
-  useEffect(() => {
-    if (!dbClient || !companyId || !userId) {
-      setLoading(false);
-      return;
-    }
-
-    const operationalRef = doc(
-      dbClient,
-      'EMPRESAS',
-      companyId,
-      'usuarios',
-      userId,
-      'datos_operativos',
-      'estado_actual'
-    );
-    const unsubscribe = onSnapshot(
-      operationalRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          setOperationalData(snapshot.data() || {});
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error listening to operational data:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [companyId, userId]);
-
-  // Update user field
-  const updateUserField = async (field: string, value: any) => {
-    if (!dbClient || !companyId || !userId) {
-      console.warn('Cannot update: missing dbClient, companyId, or userId');
       return;
     }
 
     try {
-      const userRef = doc(dbClient, 'EMPRESAS', companyId, 'usuarios', userId);
-      await updateDoc(userRef, { [field]: value });
-    } catch (error) {
-      console.error(`Error updating user field ${field}:`, error);
+      const userRef = doc(dbClient, "EMPRESAS", companyId, "usuarios", userId);
+      const unsubscribe = onSnapshot(
+        userRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            setUserData(snapshot.data() as UserData);
+          } else {
+            setDoc(userRef, {
+              fullName: user?.displayName || "",
+              email: user?.email || "",
+              createdAt: new Date().toISOString(),
+            }).catch((err) => console.error("[v0] Error initializing user:", err));
+          }
+        },
+        (err) => {
+          console.error("[v0] Error listening to user data:", err);
+          setError(err.message);
+        }
+      );
+
+      return () => unsubscribe();
+    } catch (err: any) {
+      console.error("[v0] Error setting up user listener:", err);
+      setError(err.message);
+      setLoading(false);
+    }
+  }, [companyId, userId, user]);
+
+  useEffect(() => {
+    if (!dbClient || !companyId || !userId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const operationalRef = doc(
+        dbClient,
+        "EMPRESAS",
+        companyId,
+        "datos_operativos",
+        "estado_actual"
+      );
+      const unsubscribe = onSnapshot(
+        operationalRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            setOperationalData(snapshot.data() as OperationalData);
+          }
+          setLoading(false);
+        },
+        (err) => {
+          console.error("[v0] Error listening to operational data:", err);
+          setError(err.message);
+          setLoading(false);
+        }
+      );
+
+      return () => unsubscribe();
+    } catch (err: any) {
+      console.error("[v0] Error setting up operational listener:", err);
+      setError(err.message);
+      setLoading(false);
+    }
+  }, [companyId, userId]);
+
+  const updateUserField = async (field: string, value: any): Promise<void> => {
+    if (!dbClient || !companyId || !userId) {
+      console.warn("[v0] Cannot update: missing dbClient, companyId, or userId");
+      return;
+    }
+
+    const sanitizedValue = typeof value === "string" ? sanitizeInput(value) : value;
+    const oldValue = userData[field];
+
+    setSaveStatus("saving");
+
+    try {
+      const userRef = doc(dbClient, "EMPRESAS", companyId, "usuarios", userId);
+      await updateDoc(userRef, {
+        [field]: sanitizedValue,
+        updatedAt: new Date().toISOString(),
+      });
+
+      await logUserAction(companyId, userId, `update_${field}`, {
+        field,
+        oldValue,
+        newValue: sanitizedValue,
+      });
+
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (err: any) {
+      console.error(`[v0] Error updating user field ${field}:`, err);
+      setError(err.message);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      throw err;
     }
   };
 
-  // Update company field
-  const updateCompanyField = async (field: string, value: any) => {
+  const updateCompanyField = async (field: string, value: any): Promise<void> => {
     if (!dbClient || !companyId) {
-      console.warn('Cannot update: missing dbClient or companyId');
+      console.warn("[v0] Cannot update: missing dbClient or companyId");
       return;
     }
 
+    const sanitizedValue = typeof value === "string" ? sanitizeInput(value) : value;
+    const oldValue = companyData[field];
+
+    setSaveStatus("saving");
+
     try {
-      const companyRef = doc(dbClient, 'EMPRESAS', companyId);
-      await updateDoc(companyRef, { [field]: value });
-    } catch (error) {
-      console.error(`Error updating company field ${field}:`, error);
+      const companyRef = doc(dbClient, "EMPRESAS", companyId);
+      await updateDoc(companyRef, {
+        [field]: sanitizedValue,
+        updatedAt: new Date().toISOString(),
+      });
+
+      if (userId) {
+        await logCompanyAction(companyId, userId, `update_${field}`, oldValue, sanitizedValue, {
+          field,
+        });
+      }
+
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (err: any) {
+      console.error(`[v0] Error updating company field ${field}:`, err);
+      setError(err.message);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      throw err;
     }
   };
 
@@ -142,5 +250,7 @@ export function useFirestoreSync(): FirestoreSyncData {
     updateUserField,
     updateCompanyField,
     loading,
+    error,
+    saveStatus,
   };
 }

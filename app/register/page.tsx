@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
+import { dbClient } from '@/lib/firebase'
+import { setDoc, doc } from 'firebase/firestore'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -65,12 +67,53 @@ export default function RegisterPage() {
         displayName: name,
       })
 
-      const companyId = crypto.randomUUID()
+      const companyId = `company_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`
       localStorage.setItem('companyId', companyId)
+      
+      localStorage.setItem(`user_role_${userCredential.user.uid}`, 'user')
+
+      if (dbClient) {
+        try {
+          await setDoc(doc(dbClient, 'EMPRESAS', companyId), {
+            businessName: name,
+            sector: '',
+            communicationTone: 'Profesional',
+            createdAt: new Date().toISOString(),
+            ownerId: userCredential.user.uid,
+          })
+
+          await setDoc(doc(dbClient, 'EMPRESAS', companyId, 'usuarios', userCredential.user.uid), {
+            fullName: name,
+            email: email,
+            role: 'user',
+            createdAt: new Date().toISOString(),
+          })
+
+          await setDoc(doc(dbClient, 'EMPRESAS', companyId, 'datos_operativos', 'estado_actual'), {
+            initialized: true,
+            createdAt: new Date().toISOString(),
+          })
+
+          console.log('[v0] Firestore structure created successfully for company:', companyId)
+        } catch (firestoreError) {
+          console.error('[v0] Error creating Firestore structure:', firestoreError)
+          throw new Error('Error al crear la estructura de datos. Intenta nuevamente.')
+        }
+      }
 
       router.push('/dashboard')
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al registrarse'
+    } catch (err: any) {
+      console.error('[v0] Registration error:', err)
+      let errorMessage = 'Error al registrarse'
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'Este correo ya está registrado'
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'La contraseña es muy débil'
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Correo electrónico inválido'
+      } else if (err.message) {
+        errorMessage = err.message
+      }
       setError(errorMessage)
     } finally {
       setIsLoading(false)

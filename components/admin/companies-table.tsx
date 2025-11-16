@@ -1,55 +1,109 @@
 "use client"
 
-import { useState } from "react"
-import { Edit2, Trash2, Plus, Search } from "lucide-react"
-import Modal from "./modal"
-import { mockCompanies } from "@/lib/mock-data"
+import { useState, useEffect } from "react"
+import { Edit2, Trash2, Plus, Search, AlertCircle } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getAllCompanies, updateCompanyPlan, deleteCompany } from "@/utils/firebase/admin"
+import { useAuth } from "@/lib/auth-context"
+import { useToast } from "@/hooks/use-toast"
 
 interface CompaniesTableProps {
-  onToast: (message: string, type: "success" | "error" | "info") => void
+  onStatsUpdate: () => void
 }
 
-export default function CompaniesTable({ onToast }: CompaniesTableProps) {
-  const [companies, setCompanies] = useState(mockCompanies)
+export default function CompaniesTable({ onStatsUpdate }: CompaniesTableProps) {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const [companies, setCompanies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [editFormData, setEditFormData] = useState({ name: "", plan: "", status: "", domain: "" })
+  const [editingCompany, setEditingCompany] = useState<any | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadCompanies()
+  }, [])
+
+  const loadCompanies = async () => {
+    try {
+      setLoading(true)
+      const data = await getAllCompanies()
+      setCompanies(data)
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredCompanies = companies.filter(
     (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.domain.toLowerCase().includes(searchTerm.toLowerCase()),
+      c.nombre_empresa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.id.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleEdit = (company: (typeof companies)[0]) => {
-    setEditingId(company.id)
-    setEditFormData(company)
-  }
+  const handleSaveEdit = async () => {
+    if (!editingCompany || !user) return
 
-  const handleSaveEdit = () => {
-    setCompanies(companies.map((c) => (c.id === editingId ? { ...c, ...editFormData } : c)))
-    setEditingId(null)
-    onToast("Empresa actualizada correctamente", "success")
-  }
+    try {
+      await updateCompanyPlan(
+        editingCompany.id,
+        editingCompany.plan,
+        editingCompany.status,
+        user.uid
+      )
 
-  const handleCreateNew = () => {
-    const newCompany = {
-      id: Date.now().toString(),
-      ...editFormData,
+      toast({
+        title: "Éxito",
+        description: "Empresa actualizada correctamente",
+      })
+
+      await loadCompanies()
+      await onStatsUpdate()
+      setEditingCompany(null)
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
     }
-    setCompanies([...companies, newCompany])
-    setEditFormData({ name: "", plan: "", status: "", domain: "" })
-    setIsCreateOpen(false)
-    onToast("Empresa creada correctamente", "success")
   }
 
-  const handleDelete = (id: string) => {
-    // Visual placeholder - data not actually deleted
-    onToast("Acción de eliminar activada (datos no eliminados)", "info")
+  const handleDelete = async (companyId: string) => {
+    if (!user) return
+
+    try {
+      await deleteCompany(companyId, user.uid)
+
+      toast({
+        title: "Éxito",
+        description: "Empresa eliminada correctamente",
+      })
+
+      await loadCompanies()
+      await onStatsUpdate()
+      setDeleteConfirm(null)
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    }
   }
 
   const planColors: Record<string, string> = {
+    free: "bg-gray-500/20 text-gray-300",
     starter: "bg-blue-500/20 text-blue-300",
     pro: "bg-emerald-500/20 text-emerald-300",
     enterprise: "bg-purple-500/20 text-purple-300",
@@ -61,71 +115,107 @@ export default function CompaniesTable({ onToast }: CompaniesTableProps) {
     inactive: "bg-gray-500/20 text-gray-300",
   }
 
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin text-primary text-4xl mb-4">⏳</div>
+        <p className="text-muted-foreground">Cargando empresas...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Search */}
+      <div className="flex items-center justify-between gap-4">
         <div className="flex-1 max-w-sm relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#96b5c7]" />
-          <input
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
             type="text"
             placeholder="Buscar empresas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] placeholder-[#96b5c7] focus:outline-none focus:border-[#00e1b4] transition-colors"
+            className="pl-10"
           />
         </div>
-        <button
-          onClick={() => {
-            setEditFormData({ name: "", plan: "", status: "", domain: "" })
-            setIsCreateOpen(true)
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#00e1b4] text-[#001328] rounded-lg hover:bg-[#00d9a8] transition-colors font-semibold text-sm ml-4"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Empresa
-        </button>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Table */}
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full">
-          <thead>
-            <tr className="border-b border-[#1a3a52]">
-              <th className="text-left px-4 py-3 text-[#96b5c7] font-semibold text-sm">Nombre</th>
-              <th className="text-left px-4 py-3 text-[#96b5c7] font-semibold text-sm">Plan</th>
-              <th className="text-left px-4 py-3 text-[#96b5c7] font-semibold text-sm">Estado</th>
-              <th className="text-left px-4 py-3 text-[#96b5c7] font-semibold text-sm">Dominio</th>
-              <th className="text-right px-4 py-3 text-[#96b5c7] font-semibold text-sm">Acciones</th>
+          <thead className="bg-muted/50">
+            <tr>
+              <th className="text-left px-4 py-3 text-muted-foreground font-semibold text-sm">
+                Empresa
+              </th>
+              <th className="text-left px-4 py-3 text-muted-foreground font-semibold text-sm">
+                Plan
+              </th>
+              <th className="text-left px-4 py-3 text-muted-foreground font-semibold text-sm">
+                Estado
+              </th>
+              <th className="text-left px-4 py-3 text-muted-foreground font-semibold text-sm">
+                Fecha
+              </th>
+              <th className="text-right px-4 py-3 text-muted-foreground font-semibold text-sm">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredCompanies.map((company) => (
-              <tr key={company.id} className="border-b border-[#1a3a52]/50 hover:bg-[#1a3a52]/20 transition-colors">
-                <td className="px-4 py-3 text-[#eaf6ff]">{company.name}</td>
+              <tr
+                key={company.id}
+                className="border-b border-border hover:bg-muted/30 transition-colors"
+              >
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${planColors[company.plan] || ""}`}>
-                    {company.plan}
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {company.nombre_empresa || "Sin nombre"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{company.id}</p>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      planColors[company.plan] || planColors.free
+                    }`}
+                  >
+                    {company.plan || "free"}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[company.status] || ""}`}>
-                    {company.status}
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      statusColors[company.status] || statusColors.inactive
+                    }`}
+                  >
+                    {company.status || "inactive"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-[#96b5c7] text-sm">{company.domain}</td>
+                <td className="px-4 py-3 text-muted-foreground text-sm">
+                  {company.createdAt
+                    ? new Date(company.createdAt).toLocaleDateString()
+                    : "N/A"}
+                </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => handleEdit(company)}
-                      className="p-2 hover:bg-[#1a3a52] rounded-lg transition-colors text-[#00e1b4]"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingCompany(company)}
                     >
                       <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(company.id)}
-                      className="p-2 hover:bg-[#1a3a52] rounded-lg transition-colors text-red-400"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteConfirm(company.id)}
+                      className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -134,111 +224,102 @@ export default function CompaniesTable({ onToast }: CompaniesTableProps) {
         </table>
       </div>
 
-      <Modal
-        isOpen={editingId !== null}
-        title="Editar Empresa"
-        onClose={() => setEditingId(null)}
-        onSave={handleSaveEdit}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Nombre</label>
-            <input
-              type="text"
-              value={editFormData.name}
-              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Plan</label>
-            <select
-              value={editFormData.plan}
-              onChange={(e) => setEditFormData({ ...editFormData, plan: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
-            >
-              <option value="starter">Starter</option>
-              <option value="pro">Pro</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Estado</label>
-            <select
-              value={editFormData.status}
-              onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
-            >
-              <option value="active">Activo</option>
-              <option value="suspended">Suspendido</option>
-              <option value="inactive">Inactivo</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Dominio</label>
-            <input
-              type="text"
-              value={editFormData.domain}
-              onChange={(e) => setEditFormData({ ...editFormData, domain: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
-            />
-          </div>
+      {filteredCompanies.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No se encontraron empresas</p>
         </div>
-      </Modal>
+      )}
 
-      <Modal
-        isOpen={isCreateOpen}
-        title="Crear Nueva Empresa"
-        onClose={() => setIsCreateOpen(false)}
-        onSave={handleCreateNew}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Nombre</label>
-            <input
-              type="text"
-              value={editFormData.name}
-              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Plan</label>
-            <select
-              value={editFormData.plan}
-              onChange={(e) => setEditFormData({ ...editFormData, plan: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
+      {/* Edit Modal */}
+      <Dialog open={!!editingCompany} onOpenChange={() => setEditingCompany(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Empresa</DialogTitle>
+          </DialogHeader>
+          {editingCompany && (
+            <div className="space-y-4">
+              <div>
+                <Label>Nombre de la empresa</Label>
+                <Input
+                  value={editingCompany.nombre_empresa || ""}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+              <div>
+                <Label>Plan</Label>
+                <Select
+                  value={editingCompany.plan}
+                  onValueChange={(value) =>
+                    setEditingCompany({ ...editingCompany, plan: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="starter">Starter</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Estado</Label>
+                <Select
+                  value={editingCompany.status}
+                  onValueChange={(value) =>
+                    setEditingCompany({ ...editingCompany, status: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activo</SelectItem>
+                    <SelectItem value="suspended">Suspendido</SelectItem>
+                    <SelectItem value="inactive">Inactivo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingCompany(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit}>Guardar cambios</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar eliminación</DialogTitle>
+          </DialogHeader>
+          <Alert variant="destructive">
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription>
+              Esta acción eliminará permanentemente la empresa y todos sus datos,
+              incluyendo usuarios y configuraciones. Esta acción no se puede deshacer.
+            </AlertDescription>
+          </Alert>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
             >
-              <option value="">Selecciona un plan</option>
-              <option value="starter">Starter</option>
-              <option value="pro">Pro</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Estado</label>
-            <select
-              value={editFormData.status}
-              onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
-            >
-              <option value="">Selecciona un estado</option>
-              <option value="active">Activo</option>
-              <option value="suspended">Suspendido</option>
-              <option value="inactive">Inactivo</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#eaf6ff] mb-2">Dominio</label>
-            <input
-              type="text"
-              value={editFormData.domain}
-              onChange={(e) => setEditFormData({ ...editFormData, domain: e.target.value })}
-              className="w-full px-3 py-2 bg-[#1a3a52]/40 border border-[#1a3a52] rounded-lg text-[#eaf6ff] focus:outline-none focus:border-[#00e1b4] transition-colors"
-            />
-          </div>
-        </div>
-      </Modal>
+              Eliminar permanentemente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { useAuth } from "@/lib/auth-context"
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
 import AdminPanel from "@/components/admin/admin-panel"
@@ -14,6 +14,8 @@ export default function AdminPage() {
     if (!loading) {
       if (!user) {
         router.push("/login")
+      } else if (!user.emailVerified) {
+        router.push("/verify-email")
       } else if (role !== "admin") {
         router.push("/dashboard")
       }
@@ -22,21 +24,21 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#001328] via-[#012b36] to-[#006184] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-full border-4 border-[#1a3a52] border-t-[#00e1b4] animate-spin mx-auto"></div>
-          <p className="text-[#96b5c7] mt-4">Verificando permisos...</p>
+          <div className="animate-spin text-primary text-4xl mb-4">⏳</div>
+          <p className="text-muted-foreground">Verificando permisos...</p>
         </div>
       </div>
     )
   }
 
-  if (!user || role !== "admin") {
+  if (!user || role !== "admin" || !user.emailVerified) {
     return null
   }
 
   return (
-    <DashboardLayout activeSection="admin" onSectionChange={() => {}}>
+    <DashboardLayout>
       <AdminPanel />
     </DashboardLayout>
   )

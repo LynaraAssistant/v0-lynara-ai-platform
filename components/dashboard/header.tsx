@@ -2,8 +2,6 @@
 
 import { Menu, LogOut, Sun, Moon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { signOut } from 'firebase/auth'
-import { authClient } from '@/lib/firebase'
 import { useAuth } from '@/lib/auth-context'
 import { useState } from 'react'
 import { useTheme } from '@/lib/use-theme'
@@ -14,18 +12,18 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { theme, toggleTheme, mounted } = useTheme()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await signOut(authClient)
-      localStorage.removeItem('companyId')
-      router.push('/')
+      await logout()
+      window.location.href = '/'
     } catch (error) {
-      console.log('[v0] Logout error:', error)
+      console.error('[v0] Logout error:', error)
+      alert('Error al cerrar sesión. Por favor intenta de nuevo.')
       setIsLoggingOut(false)
     }
   }

@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
+import { collection, query, where, getDocs } from 'firebase/firestore'
+import { dbClient } from '@/lib/firebase'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -32,12 +34,38 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await signInWithEmailAndPassword(authClient, email, password)
-      const companyId = localStorage.getItem('companyId') || 'default-company'
-      localStorage.setItem('companyId', companyId)
+      const userCredential = await signInWithEmailAndPassword(authClient, email, password)
+      
+      const storedCompanyId = localStorage.getItem('companyId')
+      
+      if (!storedCompanyId && dbClient) {
+        const companiesRef = collection(dbClient, 'EMPRESAS')
+        const snapshot = await getDocs(companiesRef)
+        
+        for (const companyDoc of snapshot.docs) {
+          const usersRef = collection(dbClient, 'EMPRESAS', companyDoc.id, 'usuarios')
+          const userQuery = query(usersRef, where('email', '==', email))
+          const userSnapshot = await getDocs(userQuery)
+          
+          if (!userSnapshot.empty) {
+            localStorage.setItem('companyId', companyDoc.id)
+            console.log('[v0] CompanyId recovered from Firestore:', companyDoc.id)
+            break
+          }
+        }
+      }
+      
       router.push('/dashboard')
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
+    } catch (err: any) {
+      console.error('[v0] Login error:', err)
+      let errorMessage = 'Error al iniciar sesión'
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        errorMessage = 'Credenciales incorrectas'
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Demasiados intentos. Intenta más tarde.'
+      } else if (err.message) {
+        errorMessage = err.message
+      }
       setError(errorMessage)
     } finally {
       setIsLoading(false)

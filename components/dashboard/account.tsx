@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { useFirestoreSync } from '@/hooks/useFirestoreSync'
+import { SaveIndicator } from '@/components/ui/save-indicator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function Account() {
-  const { userData, updateUserField, loading } = useFirestoreSync()
-  const [updated, setUpdated] = useState(false)
+  const { userData, updateUserField, loading, error, saveStatus } = useFirestoreSync()
+  const [updateError, setUpdateError] = useState<string | null>(null)
 
   if (loading) {
     return (
@@ -20,16 +22,30 @@ export default function Account() {
     )
   }
 
-  const handleSave = () => {
-    setUpdated(true)
-    setTimeout(() => setUpdated(false), 3000)
-  }
-
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
-      <div>
-        <h2 className="text-2xl font-bold text-[#eaf6ff]">Cuenta y Suscripción</h2>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-[#eaf6ff]">Cuenta y Suscripción</h2>
+        </div>
+        <SaveIndicator status={saveStatus} />
       </div>
+
+      {/* Error Messages */}
+      {error && (
+        <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-400" />
+          <span className="text-red-400">{error}</span>
+        </div>
+      )}
+
+      {updateError && (
+        <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-400" />
+          <span className="text-red-400">{updateError}</span>
+        </div>
+      )}
 
       {/* Current Plan */}
       <div className="bg-gradient-to-r from-[#00e1b4]/20 to-[#00a2ff]/20 border border-[#00e1b4]/40 rounded-xl p-6">
@@ -58,66 +74,75 @@ export default function Account() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-[#eaf6ff]">Nombre completo</Label>
+            <Label htmlFor="fullName" className="text-[#eaf6ff]">Nombre completo</Label>
             <Input
-              value={userData.fullName || ''}
-              onChange={(e) => updateUserField('fullName', e.target.value)}
+              id="fullName"
+              aria-label="Nombre completo"
+              value={userData?.fullName ?? ""}
+              onChange={(e) => updateUserField("fullName", e.target.value)}
               className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
             />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[#eaf6ff]">Correo electrónico</Label>
+              <Input
+                id="email"
+                aria-label="Correo electrónico"
+                value={userData?.email ?? ""}
+                onChange={(e) => updateUserField("email", e.target.value)}
+                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-[#eaf6ff]">Teléfono</Label>
+              <Input
+                id="phone"
+                aria-label="Número de teléfono"
+                value={userData?.phone ?? ""}
+                onChange={(e) => updateUserField("phone", e.target.value)}
+                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="country" className="text-[#eaf6ff]">País</Label>
+              <Input
+                id="country"
+                aria-label="País"
+                value={userData?.country ?? ""}
+                onChange={(e) => updateUserField("country", e.target.value)}
+                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city" className="text-[#eaf6ff]">Ciudad</Label>
+              <Input
+                id="city"
+                aria-label="Ciudad"
+                value={userData?.city ?? ""}
+                onChange={(e) => updateUserField("city", e.target.value)}
+                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
+              />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-[#eaf6ff]">Empresa</Label>
-            <Input
-              value={userData.company || ''}
-              onChange={(e) => updateUserField('company', e.target.value)}
-              className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
-            />
+            <Label htmlFor="language" className="text-[#eaf6ff]">Idioma de preferencia</Label>
+            <Select
+              value={userData?.language ?? "es"}
+              onValueChange={(value) => updateUserField("language", value)}
+            >
+              <SelectTrigger id="language" aria-label="Seleccionar idioma" className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]">
+                <SelectValue placeholder="Selecciona un idioma" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="es">Español</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="pt">Português</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[#eaf6ff]">Teléfono</Label>
-              <Input
-                value={userData.phone || ''}
-                onChange={(e) => updateUserField('phone', e.target.value)}
-                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#eaf6ff]">Correo electrónico</Label>
-              <Input
-                value={userData.email || ''}
-                onChange={(e) => updateUserField('email', e.target.value)}
-                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[#eaf6ff]">País</Label>
-              <Input
-                value={userData.country || ''}
-                onChange={(e) => updateUserField('country', e.target.value)}
-                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#eaf6ff]">Ubicación</Label>
-              <Input
-                value={userData.location || ''}
-                onChange={(e) => updateUserField('location', e.target.value)}
-                className="bg-[#0a1f35] border-[#1a3a52] text-[#eaf6ff]"
-              />
-            </div>
-          </div>
-          <Button onClick={handleSave} className="bg-[#00e1b4] hover:bg-[#00c9a0] text-[#001328] font-semibold">
-            Actualizar información
-          </Button>
-          {updated && (
-            <div className="flex items-center gap-2 text-[#00e1b4]">
-              <CheckCircle2 className="w-4 h-4" />
-              <span className="text-sm">Información actualizada correctamente</span>
-            </div>
-          )}
         </CardContent>
       </Card>
 

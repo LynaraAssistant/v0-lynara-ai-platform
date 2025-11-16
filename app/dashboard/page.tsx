@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
@@ -14,7 +14,7 @@ import Support from "@/components/dashboard/support"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, role } = useAuth()
   const [activeSection, setActiveSection] = useState("home")
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function DashboardPage() {
     <DashboardLayout
       activeSection={activeSection}
       onSectionChange={setActiveSection}
-      role={user?.email ? "admin" : "user"}
+      role={role}
     >
       {activeSection === "home" && <Home />}
       {activeSection === "metrics" && <Metrics />}
