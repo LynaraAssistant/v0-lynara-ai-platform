@@ -2,8 +2,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app"
 import { getAuth } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
-import { enableMultiTabIndexedDbPersistence } from "firebase/firestore"
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore"
 
 const isClient = typeof window !== "undefined"
 
@@ -23,16 +22,17 @@ if (isClient) {
 
   firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp()
   authClient = getAuth(firebaseApp)
-  dbClient = getFirestore(firebaseApp)
-
-  if (dbClient) {
-    enableMultiTabIndexedDbPersistence(dbClient).catch((err) => {
-      if (err.code === "failed-precondition") {
-        console.warn("[v0] Multiple tabs open, persistence can only be enabled in one tab at a time.")
-      } else if (err.code === "unimplemented") {
-        console.warn("[v0] Browser doesn't support offline persistence")
-      }
+  
+  // Use the new cache API instead of deprecated enableMultiTabIndexedDbPersistence
+  try {
+    dbClient = initializeFirestore(firebaseApp, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
     })
+  } catch (error) {
+    // If Firestore is already initialized, get the existing instance
+    dbClient = getFirestore(firebaseApp)
   }
 }
 

@@ -1,21 +1,33 @@
 /**
- * Admin Panel Utilities
+ * Admin Panel Utilities - CLIENT SIDE ONLY
  * 
- * Comprehensive admin operations for managing the multi-tenant platform
+ * All operations use Firebase Client SDK with proper security rules
  */
 
-import { getAdminFirestore } from "@/lib/firebase-admin"
-import { setDocument, updateDocument, getDocument, deleteDocument } from "./firestore"
+import { dbClient } from "@/lib/firebase"
+import { 
+  collection, 
+  query, 
+  getDocs, 
+  doc, 
+  updateDoc, 
+  deleteDoc,
+  orderBy,
+  where,
+  Timestamp 
+} from "firebase/firestore"
 import { writeLog } from "./logging"
 
 /**
- * Get all companies in the platform
+ * Get all companies (admin only - protected by Firestore rules)
  */
 export async function getAllCompanies(): Promise<any[]> {
   try {
-    const db = getAdminFirestore()
-    const companiesRef = db.collection("EMPRESAS")
-    const snapshot = await companiesRef.orderBy("createdAt", "desc").get()
+    if (!dbClient) throw new Error("Firestore no inicializado")
+    
+    const companiesRef = collection(dbClient, "EMPRESAS")
+    const q = query(companiesRef, orderBy("createdAt", "desc"))
+    const snapshot = await getDocs(q)
 
     return snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -28,17 +40,16 @@ export async function getAllCompanies(): Promise<any[]> {
 }
 
 /**
- * Get all users across all companies
+ * Get all users across all companies (admin only)
  */
 export async function getAllUsers(): Promise<any[]> {
   try {
     const companies = await getAllCompanies()
     const allUsers: any[] = []
-    const db = getAdminFirestore()
 
     for (const company of companies) {
-      const usersRef = db.collection(`EMPRESAS/${company.id}/usuarios`)
-      const snapshot = await usersRef.get()
+      const usersRef = collection(dbClient!, `EMPRESAS/${company.id}/usuarios`)
+      const snapshot = await getDocs(usersRef)
 
       const users = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -58,7 +69,7 @@ export async function getAllUsers(): Promise<any[]> {
 }
 
 /**
- * Update company plan and status
+ * Update company plan and status (admin only)
  */
 export async function updateCompanyPlan(
   companyId: string,
@@ -67,8 +78,10 @@ export async function updateCompanyPlan(
   adminUserId: string
 ): Promise<void> {
   try {
-    const db = getAdminFirestore()
-    await db.collection("EMPRESAS").doc(companyId).update({
+    if (!dbClient) throw new Error("Firestore no inicializado")
+    
+    const companyRef = doc(dbClient, "EMPRESAS", companyId)
+    await updateDoc(companyRef, {
       plan,
       status,
       updatedAt: new Date().toISOString(),
@@ -91,34 +104,23 @@ export async function updateCompanyPlan(
 }
 
 /**
- * Delete a company and all its data
+ * Delete a company and all its data (admin only)
  */
 export async function deleteCompany(companyId: string, adminUserId: string): Promise<void> {
   try {
-    const db = getAdminFirestore()
+    if (!dbClient) throw new Error("Firestore no inicializado")
     
-    // Delete all users
-    const usersRef = db.collection(`EMPRESAS/${companyId}/usuarios`)
-    const usersSnapshot = await usersRef.get()
+    // Delete all users first
+    const usersRef = collection(dbClient, `EMPRESAS/${companyId}/usuarios`)
+    const usersSnapshot = await getDocs(usersRef)
 
-    const batch = db.batch()
-    usersSnapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref)
-    })
-
-    // Delete operational data
-    try {
-      const opDataRef = db.doc(`EMPRESAS/${companyId}/datos_operativos/estado_actual`)
-      batch.delete(opDataRef)
-    } catch (e) {
-      // May not exist
+    for (const userDoc of usersSnapshot.docs) {
+      await deleteDoc(userDoc.ref)
     }
 
     // Delete company document
-    const companyRef = db.collection("EMPRESAS").doc(companyId)
-    batch.delete(companyRef)
-
-    await batch.commit()
+    const companyRef = doc(dbClient, "EMPRESAS", companyId)
+    await deleteDoc(companyRef)
 
     await writeLog({
       collection: "logs_empresa",
@@ -133,7 +135,7 @@ export async function deleteCompany(companyId: string, adminUserId: string): Pro
 }
 
 /**
- * Update user role
+ * Update user role (admin only)
  */
 export async function updateUserRole(
   companyId: string,
@@ -142,8 +144,10 @@ export async function updateUserRole(
   adminUserId: string
 ): Promise<void> {
   try {
-    const db = getAdminFirestore()
-    await db.collection(`EMPRESAS/${companyId}/usuarios`).doc(userId).update({
+    if (!dbClient) throw new Error("Firestore no inicializado")
+    
+    const userRef = doc(dbClient, `EMPRESAS/${companyId}/usuarios`, userId)
+    await updateDoc(userRef, {
       role,
       updatedAt: new Date().toISOString(),
     })
@@ -165,7 +169,7 @@ export async function updateUserRole(
 }
 
 /**
- * Delete a user
+ * Delete a user (admin only)
  */
 export async function deleteUser(
   companyId: string,
@@ -173,8 +177,10 @@ export async function deleteUser(
   adminUserId: string
 ): Promise<void> {
   try {
-    const db = getAdminFirestore()
-    await db.collection(`EMPRESAS/${companyId}/usuarios`).doc(userId).delete()
+    if (!dbClient) throw new Error("Firestore no inicializado")
+    
+    const userRef = doc(dbClient, `EMPRESAS/${companyId}/usuarios`, userId)
+    await deleteDoc(userRef)
 
     await writeLog({
       collection: "logs_usuario",
@@ -192,7 +198,7 @@ export async function deleteUser(
 }
 
 /**
- * Get platform statistics
+ * Get platform statistics (admin only)
  */
 export async function getPlatformStats(): Promise<{
   totalCompanies: number
