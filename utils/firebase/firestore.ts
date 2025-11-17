@@ -1,40 +1,38 @@
-// utils/firebase/firestore.ts
-"use client"
+"use client";
 
 import {
   getFirestore,
-  collection,
   doc,
+  setDoc,
   getDoc,
   getDocs,
-  setDoc,
-  deleteDoc,
   updateDoc,
+  deleteDoc,
+  collection,
   query,
   where,
   onSnapshot,
   serverTimestamp,
   type DocumentData,
   type QueryConstraint,
-} from "firebase/firestore"
+} from "firebase/firestore";
 
-import { firebaseApp } from "@/lib/firebase"
+import { firebaseApp } from "@/lib/firebase";
 
-const dbClient = getFirestore(firebaseApp)
+export const dbClient = getFirestore(firebaseApp);
 
 export {
-  dbClient,
-  collection,
   doc,
+  setDoc,
   getDoc,
   getDocs,
-  setDoc,
-  deleteDoc,
   updateDoc,
+  deleteDoc,
+  collection,
   query,
   where,
   onSnapshot,
   serverTimestamp,
-  type DocumentData,
-  type QueryConstraint,
-}
+  DocumentData,
+  QueryConstraint,
+};
