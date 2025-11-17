@@ -38,8 +38,10 @@ export default function AdminPage() {
   }
 
   return (
-    <DashboardLayout>
-      <AdminPanel />
+    <DashboardLayout
+        activeSection="admin"
+        onSectionChange={() => {}}
+    >
+        <AdminPanel />
     </DashboardLayout>
-  )
-}
+)
