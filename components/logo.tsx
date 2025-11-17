@@ -4,7 +4,7 @@ interface LogoProps {
   size?: "sm" | "md" | "lg"
 }
 
-export function Logo({ size = "md" }: LogoProps) {
+export default function Logo({ size = "md" }: LogoProps) {
   const sizeClasses = {
     sm: "w-6 h-6",
     md: "w-8 h-8",
@@ -17,7 +17,7 @@ export function Logo({ size = "md" }: LogoProps) {
         viewBox="0 0 32 32"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-full p-1"
+        className="w-full h-full p-1 text-primary"
       >
         <rect width="32" height="32" rx="6" fill="currentColor" className="text-primary" />
         <g>
