@@ -1,44 +1,40 @@
-"use client";
-
-/**
- * Módulo central para trabajar con Firestore usando el SDK de cliente.
- * No importa nada desde "firebase/auth".
- */
+// utils/firebase/firestore.ts
+"use client"
 
 import {
-  doc,
+  getFirestore,
   collection,
-  setDoc,
+  doc,
   getDoc,
   getDocs,
-  updateDoc,
+  setDoc,
   deleteDoc,
+  updateDoc,
   query,
   where,
   onSnapshot,
   serverTimestamp,
   type DocumentData,
   type QueryConstraint,
-} from "firebase/firestore";
+} from "firebase/firestore"
 
-import { dbClient } from "@/lib/firebase"; // <- AHORA SÍ EXISTE
+import { firebaseApp } from "@/lib/firebase"
 
-/**
- * Exporta helpers de Firestore + la instancia dbClient
- */
+const dbClient = getFirestore(firebaseApp)
+
 export {
   dbClient,
-  doc,
   collection,
-  setDoc,
+  doc,
   getDoc,
   getDocs,
-  updateDoc,
+  setDoc,
   deleteDoc,
+  updateDoc,
   query,
   where,
   onSnapshot,
   serverTimestamp,
   type DocumentData,
   type QueryConstraint,
-};
+}
