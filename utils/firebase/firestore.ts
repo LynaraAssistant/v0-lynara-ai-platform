@@ -3,46 +3,43 @@
 
 import {
   doc,
+  collection,
   setDoc,
   getDoc,
+  getDocs,
   updateDoc,
   deleteDoc,
-  collection,
   query,
   where,
-  getDocs,
   onSnapshot,
+  serverTimestamp,
   type DocumentData,
   type QueryConstraint,
-  serverTimestamp,
 } from "firebase/firestore";
 
 import { dbClient } from "@/lib/firebase";
 
 /**
- * Este módulo es un punto central para trabajar con Firestore.
- * Solo usa el SDK de cliente y NUNCA importa nada desde "firebase/auth".
- * 
+ * Módulo central para trabajar con Firestore usando el SDK de cliente.
+ * NO importa nada desde "firebase/auth".
+ *
  * Exporta:
- * - dbClient: instancia de Firestore ya inicializada
- * - helpers: funciones típicas de Firestore y tipos asociados
+ *   - dbClient: instancia de Firestore ya inicializada
+ *   - helpers: funciones típicas de Firestore y tipos asociados
  */
-
 export {
   dbClient,
   doc,
+  collection,
   setDoc,
   getDoc,
+  getDocs,
   updateDoc,
   deleteDoc,
-  collection,
   query,
   where,
-  getDocs,
   onSnapshot,
-  DocumentData,
-  QueryConstraint,
   serverTimestamp,
+  type DocumentData,
+  type QueryConstraint,
 };
-
-// Additional helper functions can be added here if needed
