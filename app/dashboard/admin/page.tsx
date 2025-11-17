@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
 import AdminPanel from "@/components/admin/admin-panel"
@@ -10,6 +10,7 @@ export default function AdminPage() {
   const router = useRouter()
   const { user, loading, role } = useAuth()
 
+  // Redirecciones de seguridad
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -22,6 +23,7 @@ export default function AdminPage() {
     }
   }, [user, loading, role, router])
 
+  // Pantalla de carga
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -33,15 +35,17 @@ export default function AdminPage() {
     )
   }
 
+  // Bloqueo si no es admin
   if (!user || role !== "admin" || !user.emailVerified) {
     return null
   }
 
   return (
-    <DashboardLayout
-        activeSection="admin"
-        onSectionChange={() => {}}
+    <DashboardLayout 
+      activeSection="admin"
+      onSectionChange={() => {}}
     >
-        <AdminPanel />
+      <AdminPanel />
     </DashboardLayout>
-)
+  )
+}

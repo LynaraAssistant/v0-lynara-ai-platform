@@ -1,17 +1,28 @@
 "use client"
 
-import { Home, TrendingUp, Zap, Brain, User, HelpCircle, Menu, X, LogOut, Shield } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import {
+  Home,
+  TrendingUp,
+  Zap,
+  Brain,
+  User,
+  HelpCircle,
+  Menu,
+  X,
+  LogOut,
+  Shield,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useState } from "react"
-import { Logo } from "../logo"
+import Logo from "../logo"
 
 const menuItems = [
   { id: "home", label: "Inicio", icon: Home },
   { id: "metrics", label: "Métricas", icon: TrendingUp },
-  { id: "automations", label: "Automatizaciones", icon: Zap },
+  { id: "automatizaciones", label: "Automatizaciones", icon: Zap },
   { id: "ai-data", label: "Datos IA", icon: Brain },
-  { id: "account", label: "Cuenta", icon: User },
+  { id: "cuenta", label: "Cuenta", icon: User },
   { id: "support", label: "Soporte", icon: HelpCircle },
 ]
 
@@ -23,7 +34,13 @@ interface SidebarProps {
   role?: string
 }
 
-export default function Sidebar({ activeSection, onSectionChange, isOpen, onToggle, role }: SidebarProps) {
+export default function Sidebar({
+  activeSection,
+  onSectionChange,
+  isOpen,
+  onToggle,
+  role,
+}: SidebarProps) {
   const router = useRouter()
   const { user, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -31,13 +48,14 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
   const handleLogout = async () => {
     console.log("[v0] Sidebar logout button clicked")
     setIsLoggingOut(true)
+
     try {
       await logout()
       console.log("[v0] Logout successful, redirecting to home")
       window.location.href = "/"
     } catch (error) {
       console.error("[v0] Logout error:", error)
-      alert('Error al cerrar sesión. Por favor intenta de nuevo.')
+      alert("Error al cerrar sesión. Por favor intenta de nuevo.")
       setIsLoggingOut(false)
     }
   }
@@ -56,25 +74,25 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
         {isOpen ? <X className="w-5 h-5 text-primary" /> : <Menu className="w-5 h-5 text-primary" />}
       </button>
 
-      {/* Sidebar overlay for mobile */}
+      {/* Overlay */}
       {isOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30 animate-fade-in"
+          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-fade-in"
           onClick={() => {
             console.log("[v0] Sidebar overlay clicked, toggling sidebar")
             onToggle()
           }}
           aria-hidden="true"
-        />
+        ></div>
       )}
 
-      {/* Sidebar */}
+      {/* SIDEBAR */}
       <div
-        className={`fixed md:static h-screen w-64 bg-card/80 backdrop-blur-xl border-r border-border transition-all duration-300 z-40 overflow-y-auto ${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`fixed md:static h-screen w-64 bg-card/80 backdrop-blur-xl border-r border-border transition-all duration-300 z-40 overflow-y-auto 
+          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         <div className="flex flex-col h-full p-6">
+          {/* Logo */}
           <div className="mb-12 mt-12 md:mt-0 flex items-center gap-2">
             <Logo size="sm" />
             <div>
@@ -83,10 +101,12 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
             </div>
           </div>
 
+          {/* NAVIGATION */}
           <nav className="flex-1 space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon
               const isActive = activeSection === item.id
+
               return (
                 <button
                   key={item.id}
@@ -107,7 +127,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
               )
             })}
 
-            {/* Admin menu item shown only for admin users */}
+            {/* ADMIN SECTION */}
             {role === "admin" && (
               <button
                 onClick={() => {
@@ -127,7 +147,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
             )}
           </nav>
 
-          {/* User info and logout section */}
+          {/* USER INFO + LOGOUT */}
           <div className="pt-6 border-t border-border space-y-3">
             {user && (
               <div className="px-4 py-3 rounded-lg bg-muted/40 border border-border transition-colors">
@@ -135,6 +155,7 @@ export default function Sidebar({ activeSection, onSectionChange, isOpen, onTogg
                 <p className="text-sm font-semibold text-primary truncate">{user.email}</p>
               </div>
             )}
+
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
