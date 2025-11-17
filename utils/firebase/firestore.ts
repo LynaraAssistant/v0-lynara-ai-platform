@@ -1,5 +1,9 @@
-// utils/firebase/firestore.ts
 "use client";
+
+/**
+ * Módulo central para trabajar con Firestore usando el SDK de cliente.
+ * No importa nada desde "firebase/auth".
+ */
 
 import {
   doc,
@@ -17,15 +21,10 @@ import {
   type QueryConstraint,
 } from "firebase/firestore";
 
-import { dbClient } from "@/lib/firebase";
+import { dbClient } from "@/lib/firebase"; // <- AHORA SÍ EXISTE
 
 /**
- * Módulo central para trabajar con Firestore usando el SDK de cliente.
- * NO importa nada desde "firebase/auth".
- *
- * Exporta:
- *   - dbClient: instancia de Firestore ya inicializada
- *   - helpers: funciones típicas de Firestore y tipos asociados
+ * Exporta helpers de Firestore + la instancia dbClient
  */
 export {
   dbClient,
