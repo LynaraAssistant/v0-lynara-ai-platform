@@ -1,14 +1,13 @@
 "use client";
 
 import {
-  getFirestore,
   doc,
+  collection,
   setDoc,
   getDoc,
   getDocs,
   updateDoc,
   deleteDoc,
-  collection,
   query,
   where,
   onSnapshot,
@@ -17,22 +16,26 @@ import {
   type QueryConstraint,
 } from "firebase/firestore";
 
-import { firebaseApp } from "@/lib/firebase";
+import { dbClient } from "@/lib/firebase";
+import { writeLog } from "./logging";
 
-export const dbClient = getFirestore(firebaseApp);
+/**
+ * Helpers centralizados para Firestore
+ */
 
 export {
+  dbClient,
   doc,
+  collection,
   setDoc,
   getDoc,
   getDocs,
   updateDoc,
   deleteDoc,
-  collection,
   query,
   where,
   onSnapshot,
   serverTimestamp,
-  DocumentData,
-  QueryConstraint,
+  type DocumentData,
+  type QueryConstraint,
 };
