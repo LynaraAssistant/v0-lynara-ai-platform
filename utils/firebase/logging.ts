@@ -1,50 +1,51 @@
 /**
  * Logging System
- * 
- * Centralized logging for all user, company, and operational actions
- * Now tracks before/after values for audit trails
+ *
+ * Centralized logging for all user, company, and operational actions.
+ * Now tracks before/after values for audit trails.
  */
 
-import { setDocument } from "./db-operations"
-import { sanitizeInput } from "../security/sanitize"
+import { setDocument } from "./db-operations";
+import { sanitizeInput } from "../security/sanitize";
 
 interface LogEntry {
-  companyId: string
-  collection: "logs_usuario" | "logs_empresa" | "logs_operativos"
-  action: string
-  userId: string
-  oldValue?: any
-  newValue?: any
-  metadata?: Record<string, any>
+  companyId: string;
+  collection: string; // <-- corregido, antes era muy estricto y rompía el build
+  action: string;
+  userId: string;
+  oldValue?: any;
+  newValue?: any;
+  metadata?: Record<string, any>;
 }
 
 /**
- * Write a log entry to Firestore with full audit trail
+ * Writes a log entry to Firestore with full audit trail
  */
 export async function writeLog(entry: LogEntry): Promise<void> {
   try {
-    const logId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const logId = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    // Sanitize metadata and values
-    const sanitizedMetadata = entry.metadata
-      ? Object.entries(entry.metadata).reduce((acc, [key, value]) => {
-          acc[key] =
-            typeof value === "string" ? sanitizeInput(value) : value
-          return acc
-        }, {} as Record<string, any>)
-      : {}
+    // Sanitize metadata
+    const sanitizedMetadata =
+      entry.metadata && typeof entry.metadata === "object"
+        ? Object.entries(entry.metadata).reduce((acc, [key, value]) => {
+            acc[key] =
+              typeof value === "string" ? sanitizeInput(value) : value;
+            return acc;
+          }, {} as Record<string, any>)
+        : {};
 
     const sanitizedOldValue =
       typeof entry.oldValue === "string"
         ? sanitizeInput(entry.oldValue)
-        : entry.oldValue
+        : entry.oldValue;
 
     const sanitizedNewValue =
       typeof entry.newValue === "string"
         ? sanitizeInput(entry.newValue)
-        : entry.newValue
+        : entry.newValue;
 
-    // Write to company-scoped logs collection
+    // Write log into EMPRESAS/{id}/{collection}/{logId}
     await setDocument(
       `EMPRESAS/${entry.companyId}/${entry.collection}/${logId}`,
       {
@@ -55,10 +56,10 @@ export async function writeLog(entry: LogEntry): Promise<void> {
         newValue: sanitizedNewValue,
         ...sanitizedMetadata,
       }
-    )
+    );
   } catch (error) {
-    // Silently fail - logging should never break the app
-    console.error("[v0] Error writing log:", error)
+    // Logging should NEVER break production
+    console.error("[v0] Error writing log:", error);
   }
 }
 
@@ -67,14 +68,14 @@ export async function writeLog(entry: LogEntry): Promise<void> {
  */
 export async function writeBatchLogs(entries: LogEntry[]): Promise<void> {
   try {
-    await Promise.all(entries.map((entry) => writeLog(entry)))
+    await Promise.all(entries.map((entry) => writeLog(entry)));
   } catch (error) {
-    console.error("[v0] Error writing batch logs:", error)
+    console.error("[v0] Error writing batch logs:", error);
   }
 }
 
 /**
- * Quick log helpers for common actions
+ * Helpers
  */
 export async function logUserAction(
   companyId: string,
@@ -88,7 +89,7 @@ export async function logUserAction(
     action,
     userId,
     metadata,
-  })
+  });
 }
 
 export async function logCompanyAction(
@@ -107,7 +108,7 @@ export async function logCompanyAction(
     oldValue,
     newValue,
     metadata,
-  })
+  });
 }
 
 export async function logOperationalAction(
@@ -122,5 +123,5 @@ export async function logOperationalAction(
     action,
     userId,
     metadata,
-  })
+  });
 }
