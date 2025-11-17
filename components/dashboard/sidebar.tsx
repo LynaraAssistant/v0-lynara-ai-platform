@@ -15,7 +15,7 @@ import {
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useState } from "react"
-import Logo from "../logo"
+import { Logo } from "../logo"   // ✅ CORREGIDO — antes estaba mal
 
 const menuItems = [
   { id: "home", label: "Inicio", icon: Home },
@@ -83,16 +83,17 @@ export default function Sidebar({
             onToggle()
           }}
           aria-hidden="true"
-        ></div>
+        />
       )}
 
-      {/* SIDEBAR */}
+      {/* Sidebar */}
       <div
-        className={`fixed md:static h-screen w-64 bg-card/80 backdrop-blur-xl border-r border-border transition-all duration-300 z-40 overflow-y-auto 
-          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        className={`fixed md:static h-screen w-64 bg-card/80 backdrop-blur-xl border-r border-border transition-all duration-300 z-40 overflow-y-auto ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
       >
+        {/* Logo */}
         <div className="flex flex-col h-full p-6">
-          {/* Logo */}
           <div className="mb-12 mt-12 md:mt-0 flex items-center gap-2">
             <Logo size="sm" />
             <div>
@@ -101,7 +102,7 @@ export default function Sidebar({
             </div>
           </div>
 
-          {/* NAVIGATION */}
+          {/* Navigation */}
           <nav className="flex-1 space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon
@@ -127,7 +128,7 @@ export default function Sidebar({
               )
             })}
 
-            {/* ADMIN SECTION */}
+            {/* Admin Section */}
             {role === "admin" && (
               <button
                 onClick={() => {
@@ -147,7 +148,7 @@ export default function Sidebar({
             )}
           </nav>
 
-          {/* USER INFO + LOGOUT */}
+          {/* User info + Logout */}
           <div className="pt-6 border-t border-border space-y-3">
             {user && (
               <div className="px-4 py-3 rounded-lg bg-muted/40 border border-border transition-colors">

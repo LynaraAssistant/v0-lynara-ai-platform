@@ -1,6 +1,10 @@
 "use client"
 
-export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+interface LogoProps {
+  size?: "sm" | "md" | "lg"
+}
+
+export function Logo({ size = "md" }: LogoProps) {
   const sizeClasses = {
     sm: "w-6 h-6",
     md: "w-8 h-8",
@@ -9,7 +13,12 @@ export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
 
   return (
     <div className={`${sizeClasses[size]} bg-primary rounded-lg flex items-center justify-center`}>
-      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full p-1">
+      <svg
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full p-1"
+      >
         <rect width="32" height="32" rx="6" fill="currentColor" className="text-primary" />
         <g>
           <rect x="8" y="6" width="4" height="20" rx="2" fill="#0B132B" />
