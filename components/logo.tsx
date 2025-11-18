@@ -29,3 +29,5 @@ export default function Logo({ size = "md" }: LogoProps) {
     </div>
   )
 }
+
+export { default as Logo } from './logo'
