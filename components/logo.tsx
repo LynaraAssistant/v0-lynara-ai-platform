@@ -4,7 +4,7 @@ interface LogoProps {
   size?: "sm" | "md" | "lg"
 }
 
-export default function Logo({ size = "md" }: LogoProps) {
+export function Logo({ size = "md" }: LogoProps) {
   const sizeClasses = {
     sm: "w-6 h-6",
     md: "w-8 h-8",
@@ -30,4 +30,4 @@ export default function Logo({ size = "md" }: LogoProps) {
   )
 }
 
-export { default as Logo } from './logo'
+export default Logo
